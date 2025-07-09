@@ -194,8 +194,8 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
     print(f'Test Loss: {test_loss / len(test_loader):.4f}')
     
 
-    torch.save(model.state_dict(), 'building_detector.pth')
-    print("Model saved to building_detector.pth")
+    torch.save(model.state_dict(), 'checkpoint.pth')
+    print("Model saved to checkpoint.pth")
 
 
 if __name__ == "__main__":
