@@ -1,6 +1,6 @@
 ## Background
 
-This is an experiment on how to build a Geo-model that can be reproduced, deployed and scaled. I am setting up a simple CNN building detection model with standardized infrastructure and metadata. This model will serve as a template for how model should be documented or developed to be able to reused and reproduced.
+This is an experiment on how to build a Geo-AI model that can be reproduced, deployed and scaled. I am setting up a simple CNN building detection model with standardized infrastructure and metadata. This model will serve as a template for how model could be documented or developed to be able to reused and reproduced.
 
 ## Setup 
 
