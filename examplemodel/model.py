@@ -1,0 +1,208 @@
+import os
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset, random_split
+
+
+class BuildingDataset(Dataset):
+    def __init__(self, image_dir, label_dir, transform=None, target_transform=None):
+        self.image_dir = image_dir
+        self.label_dir = label_dir
+        self.transform = transform # this is for image 
+        self.target_transform = target_transform # this is for label hai guys
+        self.images = sorted(os.listdir(image_dir))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        image_path = os.path.join(self.image_dir, self.images[idx])
+        label_path = os.path.join(self.label_dir, self.images[idx])
+
+        image = Image.open(image_path).convert('RGB')
+        label = Image.open(label_path).convert('L') # grayscale 0-255
+
+        if self.transform:
+            image = self.transform(image)
+        
+        if self.target_transform:
+            label = self.target_transform(label)
+
+        return image, label
+
+
+def create_data_loaders(image_dir, label_dir, batch_size=32, 
+                        val_ratio=0.15, test_ratio=0.15, seed=42):
+
+    image_transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) # i took it from imagenet dataset
+    ])
+    
+    target_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=transforms.InterpolationMode.NEAREST),
+        transforms.ToTensor()
+    ])
+    
+
+    full_dataset = BuildingDataset(
+        image_dir=image_dir,
+        label_dir=label_dir,
+        transform=image_transform,
+        target_transform=target_transform
+    )
+    
+
+    dataset_size = len(full_dataset)
+    test_size = int(dataset_size * test_ratio)
+    val_size = int(dataset_size * val_ratio)
+    train_size = dataset_size - val_size - test_size
+    
+    print(f"Total dataset size: {dataset_size}")
+    print(f"Train set size: {train_size}")
+    print(f"Validation set size: {val_size}")
+    print(f"Test set size: {test_size}")
+
+    generator = torch.Generator().manual_seed(seed)
+    train_dataset, val_dataset, test_dataset = random_split(
+        full_dataset, [train_size, val_size, test_size], generator=generator
+    )
+    
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+    )
+    
+    return train_loader, val_loader, test_loader
+
+
+class BuildingDetector(nn.Module):
+    def __init__(self):
+        super(BuildingDetector, self).__init__()
+        # encodder - downsampling
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  # 256→128
+        
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)  # 128→64
+        
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)  # 64→32
+        
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        
+        # decoder - upsampling
+        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)  # 32→64
+        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)  # 64→128
+        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)   # 128→256
+        
+        self.output_conv = nn.Conv2d(64, 1, kernel_size=1)
+
+    def forward(self, x):
+        # Encoder
+        conv1 = F.relu(self.conv1(x))
+        pool1 = self.pool1(conv1)
+        
+        conv2 = F.relu(self.conv2(pool1))
+        pool2 = self.pool2(conv2)
+        
+        conv3 = F.relu(self.conv3(pool2))
+        pool3 = self.pool3(conv3)
+        
+        conv4 = F.relu(self.conv4(pool3))
+        
+        # Decoder
+        up1 = F.relu(self.upconv1(conv4))
+        up2 = F.relu(self.upconv2(up1))
+        up3 = F.relu(self.upconv3(up2))
+        
+        out = torch.sigmoid(self.output_conv(up3))
+        
+        return out
+
+
+def train(image_dir, label_dir, num_epochs=10, batch_size=32):
+
+    train_loader, val_loader, test_loader = create_data_loaders(
+        image_dir=image_dir,
+        label_dir=label_dir,
+        batch_size=batch_size
+    )
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = BuildingDetector().to(device)
+    criterion = nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    
+    print("Using device:", device)
+    for epoch in range(num_epochs):
+
+        model.train()
+        train_loss = 0.0
+        for images, labels in train_loader:
+            images = images.to(device)
+            labels = labels.to(device) 
+            # forward pass
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+            # backward pass and optimize
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+
+
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+                
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
+        
+
+        print(f'Epoch {epoch+1}/{num_epochs}:')
+        print(f'Train Loss: {train_loss / len(train_loader):.4f}')
+        print(f'Val Loss: {val_loss / len(val_loader):.4f}')
+    
+
+    model.eval()
+    test_loss = 0.0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            test_loss += loss.item()
+    
+    print(f'Test Loss: {test_loss / len(test_loader):.4f}')
+    
+
+    torch.save(model.state_dict(), 'building_detector.pth')
+    print("Model saved to building_detector.pth")
+
+
+if __name__ == "__main__":
+
+    TRAINING_DEST_DIR = os.path.join(os.getcwd(), "data/train/banepa")
+
+    image_dir = os.path.join(TRAINING_DEST_DIR, "chips")
+    label_dir = os.path.join(TRAINING_DEST_DIR, "labels")
+
+    train(image_dir, label_dir, num_epochs=15)
