@@ -1,5 +1,6 @@
 import os
 
+import mlflow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,6 +8,12 @@ import torchvision.transforms as transforms
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, random_split
 
+
+def calculate_pixel_accuracy(pred, target, threshold=0.5):
+    pred_binary = (pred > threshold).float()
+    correct = (pred_binary == target).sum().item()
+    total = target.numel()  
+    return correct / total
 
 class BuildingDataset(Dataset):
     def __init__(self, image_dir, label_dir, transform=None, target_transform=None):
@@ -133,69 +140,131 @@ class BuildingDetector(nn.Module):
 
 def train(image_dir, label_dir, num_epochs=10, batch_size=32):
 
-    train_loader, val_loader, test_loader = create_data_loaders(
-        image_dir=image_dir,
-        label_dir=label_dir,
-        batch_size=batch_size
-    )
+    mlflow.set_experiment("building-detection")
+    with mlflow.start_run():
+        
+        lr = 0.001
+        mlflow.log_params(
+                params={
+                    "num_epochs": num_epochs,
+                    "batch_size": batch_size,
+                    "learning_rate": lr,
+                    "image_dir": image_dir,
+                    "label_dir": label_dir,
+                }
+            )
+
+
+        train_loader, val_loader, test_loader = create_data_loaders(
+            image_dir=image_dir,
+            label_dir=label_dir,
+            batch_size=batch_size
+        )
+        
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = BuildingDetector().to(device)
+        criterion = nn.BCELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        
+        print("Using device:", device)
+        for epoch in range(num_epochs):
+
+            model.train()
+            train_loss = 0.0
+            train_accuracy = 0.0
+            for images, labels in train_loader:
+                images = images.to(device)
+                labels = labels.to(device) 
+                # forward pass
+                optimizer.zero_grad()
+                outputs = model(images)
+                batch_loss = criterion(outputs, labels)
+
+                batch_accuracy = calculate_pixel_accuracy(outputs, labels)
+                train_accuracy += batch_accuracy
+
+                # backward pass and optimize
+                batch_loss.backward()
+                optimizer.step()
+                train_loss += batch_loss.item()
+
+            model.eval()
+            val_loss = 0.0
+            val_accuracy = 0.0
+            with torch.no_grad():
+                for images, labels in val_loader:
+                    images = images.to(device)
+                    labels = labels.to(device)
+                    
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+                    val_loss += loss.item()
+            
+                    batch_accuracy = calculate_pixel_accuracy(outputs, labels)
+                    val_accuracy += batch_accuracy
+
+
+
+                    
+            avg_train_loss = train_loss / len(train_loader)
+            avg_train_accuracy = train_accuracy / len(train_loader)
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = BuildingDetector().to(device)
-    criterion = nn.BCELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    
-    print("Using device:", device)
-    for epoch in range(num_epochs):
 
-        model.train()
-        train_loss = 0.0
-        for images, labels in train_loader:
-            images = images.to(device)
-            labels = labels.to(device) 
-            # forward pass
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            avg_val_loss = val_loss / len(val_loader)
+            avg_val_accuracy = val_accuracy / len(val_loader)
+            
 
-            # backward pass and optimize
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()
+            print(f'Epoch - {epoch+1}/{num_epochs}:')
+            print(f'Train -  Loss: {avg_train_loss:.4f}, Accuracy: {avg_train_accuracy:.4f}')
+            print(f'Val -  Loss: {avg_val_loss:.4f}, Accuracy: {avg_val_accuracy:.4f}')
+            
 
+            model_info = mlflow.pytorch.log_model(
+                pytorch_model=model,
+                name=f"model-epoch-{epoch}",
+                step=epoch,
+            )
 
+            mlflow.log_metrics(
+                metrics={
+                    "train_loss": avg_train_loss,
+                    "train_accuracy": avg_train_accuracy,
+                    "val_loss": avg_val_loss,
+                    "val_accuracy": avg_val_accuracy
+                },
+                step=epoch,
+                model_id=model_info.model_id
+            )
+
+        # this is the last model state during the training , which may not necessarily be the best model
         model.eval()
-        val_loss = 0.0
+        test_loss = 0.0
+        test_accuracy = 0.0
         with torch.no_grad():
-            for images, labels in val_loader:
+            for images, labels in test_loader:
                 images = images.to(device)
                 labels = labels.to(device)
                 
                 outputs = model(images)
                 loss = criterion(outputs, labels)
-                val_loss += loss.item()
+                test_loss += loss.item()
         
-
-        print(f'Epoch {epoch+1}/{num_epochs}:')
-        print(f'Train Loss: {train_loss / len(train_loader):.4f}')
-        print(f'Val Loss: {val_loss / len(val_loader):.4f}')
-    
-
-    model.eval()
-    test_loss = 0.0
-    with torch.no_grad():
-        for images, labels in test_loader:
-            images = images.to(device)
-            labels = labels.to(device)
-            
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            test_loss += loss.item()
-    
-    print(f'Test Loss: {test_loss / len(test_loader):.4f}')
-    
-
-    torch.save(model.state_dict(), 'checkpoint.pth')
-    print("Model saved to checkpoint.pth")
+                batch_accuracy = calculate_pixel_accuracy(outputs, labels)
+                test_accuracy += batch_accuracy
+        
+        avg_test_loss = test_loss / len(test_loader)
+        avg_test_accuracy = test_accuracy / len(test_loader)
+        
+        print(f'Test Loss: {avg_test_loss:.4f}, Accuracy: {avg_test_accuracy:.4f}')
+        mlflow.log_metrics(
+            metrics={
+                "test_loss": avg_test_loss,
+                "test_accuracy": avg_test_accuracy
+            },
+            model_id=model_info.model_id
+        )
+        torch.save(model.state_dict(), 'checkpoint.pth')
+        print("Model saved to checkpoint.pth")
 
 
 if __name__ == "__main__":
