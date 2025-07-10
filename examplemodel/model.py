@@ -23,7 +23,7 @@ def calculate_pixel_accuracy(pred, target, threshold=0.5):
     total = target.numel()  
     return correct / total
 
-class BuildingDataset(Dataset):
+class CampDataset(Dataset):
     def __init__(self, image_dir, label_dir, transform=None, target_transform=None):
         self.image_dir = image_dir
         self.label_dir = label_dir
@@ -65,7 +65,7 @@ def create_data_loaders(image_dir, label_dir, batch_size=32,
     ])
     
 
-    full_dataset = BuildingDataset(
+    full_dataset = CampDataset(
         image_dir=image_dir,
         label_dir=label_dir,
         transform=image_transform,
@@ -101,9 +101,9 @@ def create_data_loaders(image_dir, label_dir, batch_size=32,
     return train_loader, val_loader, test_loader
 
 
-class BuildingDetector(nn.Module):
+class RefugeeCampDetector(nn.Module):
     def __init__(self):
-        super(BuildingDetector, self).__init__()
+        super(RefugeeCampDetector, self).__init__()
         # encodder - downsampling
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  # 256→128
@@ -159,6 +159,7 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
                     "learning_rate": lr,
                     "image_dir": image_dir,
                     "label_dir": label_dir,
+                    "dataset_size": len(os.listdir(image_dir)),
                 }
             )
 
@@ -168,12 +169,15 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
             label_dir=label_dir,
             batch_size=batch_size
         )
-        
+        mlflow.log_artifact(image_dir, artifact_path="images")
+        mlflow.log_artifact(label_dir, artifact_path="labels")
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = BuildingDetector().to(device)
+        model = RefugeeCampDetector().to(device)
         criterion = nn.BCELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-        
+        best_val_accuracy = 0.0
+        best_model_path = "best_model.pth"
         print("Using device:", device)
         for epoch in range(num_epochs):
 
@@ -243,14 +247,20 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
             print(f'Val -  Loss: {avg_val_loss:.4f}, Accuracy: {avg_val_accuracy:.4f}')
             print(f'Test - Loss: {avg_test_loss:.4f}, Accuracy: {avg_test_accuracy:.4f}')
                 
-            sample_input_to_log = get_input_example(train_loader, device).cpu().detach().numpy()
 
-            model_info = mlflow.pytorch.log_model(
-                pytorch_model=model,
-                name=f"model-epoch-{epoch}",
-                step=epoch,
-                input_example=sample_input_to_log,
-            )
+            # model_info = mlflow.pytorch.log_model(
+            #     pytorch_model=model,
+            #     name=f"model-epoch-{epoch}",
+            #     step=epoch,
+            #     input_example=sample_input_to_log,
+            # )
+
+            if avg_val_accuracy > best_val_accuracy:
+                best_val_accuracy = avg_val_accuracy
+                torch.save(model.state_dict(), best_model_path)
+                print(f"New best model saved at epoch {epoch+1} with accuracy: {best_val_accuracy:.4f}")
+
+
 
             mlflow.log_metrics(
                 metrics={
@@ -261,9 +271,23 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
                     "test_loss": avg_test_loss,
                     "test_accuracy": avg_test_accuracy
                 },
-                step=epoch,
-                model_id=model_info.model_id
+                step=epoch
             )
+
+
+        if os.path.exists(best_model_path):
+            model.load_state_dict(torch.load(best_model_path))
+            sample_input_to_log = get_input_example(train_loader, device).cpu().detach().numpy()
+
+            mlflow.pytorch.log_model(
+                pytorch_model=model,
+                artifact_path="model", 
+                input_example=sample_input_to_log,
+                registered_model_name="best-refugeecamp-detector"
+            )
+            print("Successfully logged the best model to MLflow.")
+
+            os.remove(best_model_path)
 
         print("Training complete.")
         torch.save(model.state_dict(), 'checkpoint.pth')
