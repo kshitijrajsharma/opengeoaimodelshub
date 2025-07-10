@@ -147,8 +147,8 @@ class RefugeeCampDetector(nn.Module):
 
 
 def train(image_dir, label_dir, num_epochs=10, batch_size=32):
-    mlflow.autolog()
-    mlflow.set_experiment("building-detection")
+    mlflow.enable_system_metrics_logging()
+    mlflow.set_experiment("refugee-camp-detection")
     with mlflow.start_run():
         
         lr = 0.001
@@ -169,8 +169,8 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
             label_dir=label_dir,
             batch_size=batch_size
         )
-        mlflow.log_artifact(image_dir, artifact_path="images")
-        mlflow.log_artifact(label_dir, artifact_path="labels")
+        mlflow.log_artifact(image_dir, name="images")
+        mlflow.log_artifact(label_dir, name="labels")
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = RefugeeCampDetector().to(device)
@@ -281,7 +281,7 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
 
             mlflow.pytorch.log_model(
                 pytorch_model=model,
-                artifact_path="model", 
+                name="model", 
                 input_example=sample_input_to_log,
                 registered_model_name="best-refugeecamp-detector"
             )
