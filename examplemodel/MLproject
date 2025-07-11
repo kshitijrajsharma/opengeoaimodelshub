@@ -1,0 +1,44 @@
+name: refugee-camp-detector
+conda_env: conda.yaml
+
+entry_points:
+
+  preprocess:
+    parameters:
+      zoom:         {type: int,   default: 18}
+      bbox:         {type: list,  default: []}
+      tms:          {type: str}
+      train_dir:    {type: str,   default: "data/train/banepa"}
+    command: >
+      python src/preprocess.py
+      --zoom {zoom}
+      --bbox    ${bbox[0]} ${bbox[1]} ${bbox[2]} ${bbox[3]}
+      --tms {tms}
+      --train-dir    {train_dir}
+
+  train:
+    parameters:
+      mlflow_uri: {type: str, default: "http://localhost:5000"}
+      experiment: {type: str, default: "RefugeeCampDetection"}
+      chips_dir: {type: str}
+      labels_dir: {type: str}
+      batch_size: {type: int, default: 32}
+      epochs: {type: int, default: 10}
+      lr: {type: float, default: 1e-3}
+    command: >
+      python src/train.py
+      --mlflow_uri {mlflow_uri}
+      --experiment {experiment}
+      --chips_dir {chips_dir}
+      --labels_dir {labels_dir}
+      --batch_size {batch_size}
+      --epochs {epochs}
+      --lr {lr}
+
+  inference:
+    parameters:
+      model_path: {type: str}
+      image_path: {type: str}
+      output_path: {type: str, default: "output_mask.png"}
+    command: >
+      python src/inference.py --model_path {model_path} --image_path {image_path} --output_path {output_path}
