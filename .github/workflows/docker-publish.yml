@@ -37,9 +37,9 @@ jobs:
         id: push
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ./examplemodel
           push: true
-          file: examplemodel/Dockerfile
+          file: Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
