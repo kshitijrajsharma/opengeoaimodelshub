@@ -39,7 +39,7 @@ jobs:
         with:
           context: ./examplemodel
           push: true
-          file: Dockerfile
+          file: examplemodel/Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
