@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Blueprint: Humanitarian Geospatial MLOps Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://rsms.me/inter/inter.css');
+        .active-nav {
+            color: #0D6EFD;
+            font-weight: 600;
+        }
+        .component-item {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .component-item:hover, .component-item.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
+            border-color: #0D6EFD;
+        }
+        .tab-btn.active {
+            border-color: #0D6EFD;
+            background-color: #0D6EFD;
+            color: white;
+        }
+        .step.active .step-circle {
+            background-color: #0D6EFD;
+            color: white;
+            border-color: #0D6EFD;
+        }
+        .step.active .step-text {
+            font-weight: 600;
+            color: #0D6EFD;
+        }
+        .timeline-item .timeline-dot {
+             background-color: #0D6EFD;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-slate-900">MLOps Blueprint</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#vision" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-blue-600">Vision</a>
+                        <a href="#architecture" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-blue-600">Architecture</a>
+                        <a href="#workflows" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-blue-600">Workflows</a>
+                        <a href="#stack" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-blue-600">Tech Stack</a>
+                        <a href="#roadmap" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-blue-600">Roadmap</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Vision Section -->
+        <section id="vision" class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900">A Modern MLOps Platform for Humanitarian Action</h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">This interactive blueprint outlines a open-source MLOps platform designed to bring scalable machine learning to the humanitarian sector, enabling timely and data-driven insights for disaster response and development.</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="text-3xl text-blue-500"></div>
+                        <h3 class="mt-4 text-xl font-bold">Transparency</h3>
+                        <p class="mt-2 text-slate-600">Ensure every prediction is traceable to its source code, data, and model version for full auditability and accountability.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="text-3xl text-blue-500"></div>
+                        <h3 class="mt-4 text-xl font-bold">Reproducibility</h3>
+                        <p class="mt-2 text-slate-600">Guarantee that any training run or experiment can be perfectly reproduced, fostering collaboration and scientific validation.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="text-3xl text-blue-500"></div>
+                        <h3 class="mt-4 text-xl font-bold">Accessibility</h3>
+                        <p class="mt-2 text-slate-600">Empower non-technical experts to discover, run, and interpret model outputs through a user-friendly interface.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="text-3xl text-blue-500"></div>
+                        <h3 class="mt-4 text-xl font-bold">Cost-Effectiveness</h3>
+                        <p class="mt-2 text-slate-600">Prioritize open-source tools and efficient cloud resource management(swap up and shut down pods) to minimize operational costs for budget-conscious organizations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section id="architecture" class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-extrabold text-slate-900">The Unified Architecture</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">The platform is an ecosystem of open-source components orchestrated by Kubernetes. Click on any component in the diagram to learn more about its role.</p>
+                </div>
+                <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+                    <div class="lg:col-span-2">
+                        <div id="architecture-diagram" class="relative bg-slate-100 p-8 rounded-xl border border-slate-200">
+                             <div class="absolute top-4 left-4 text-sm font-bold text-slate-500">USERS</div>
+                            <div class="absolute bottom-4 left-4 text-sm font-bold text-slate-500">EXECUTION ENVIRONMENT (KUBERNETES)</div>
+                            
+                            <div class="grid grid-cols-5 gap-4 items-center">
+                                <!-- Users -->
+                                <div class="col-span-1 space-y-4 text-center">
+                                    <div class="bg-rose-100 p-3 rounded-lg">Data Scientist</div>
+                                    <div class="bg-indigo-100 p-3 rounded-lg">Administrator</div>
+                                    <div class="bg-teal-100 p-3 rounded-lg">End-User</div>
+                                </div>
+                                <!-- API Gateways -->
+                                <div class="col-span-1 space-y-4 text-center">
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg" data-component="api-gateways">API Gateways</div>
+                                </div>
+                                <!-- Core Services -->
+                                <div class="col-span-3 grid grid-cols-2 gap-4">
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="stac">STAC API</div>
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="mlflow">MLflow</div>
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="argo">Argo Workflows</div>
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="seldon">Seldon Core</div>
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="dvc">DVC</div>
+                                    <div class="component-item bg-white border-2 border-slate-300 p-3 rounded-lg text-center" data-component="storage">Object Storage</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="component-details" class="mt-8 lg:mt-0 p-6 bg-slate-100 rounded-xl border border-slate-200 h-full">
+                        <h3 id="details-title" class="text-2xl font-bold text-slate-900">Select a Component</h3>
+                        <p id="details-content" class="mt-4 text-slate-700">Click on a component in the diagram to see its detailed description, role, and the justification for its selection in this architecture.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflows Section -->
+        <section id="workflows" class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-extrabold text-slate-900">Workflows in Action</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Explore the three primary automated workflows that power the platform's lifecycle management for machine learning models.</p>
+                </div>
+                <div>
+                    <div class="mb-8 flex justify-center space-x-2 md:space-x-4">
+                        <button class="tab-btn active px-4 py-2 rounded-lg font-semibold border-2 border-transparent" data-tab="registration">Model Registration</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg font-semibold border-2 border-transparent" data-tab="training">Automated Training</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg font-semibold border-2 border-transparent" data-tab="inference">On-Demand Inference</button>
+                    </div>
+                    <div id="workflow-content" class="bg-white p-8 rounded-xl shadow-md">
+                        <!-- Content will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack Section -->
+        <section id="stack" class="py-20 bg-white">
+             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-extrabold text-slate-900">The Open-Source Technology Stack</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">This platform is built on a "best-of-breed" stack of powerful, open-source tools. Each component was chosen for its specific strengths, creating a modular and flexible system.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">STAC & MLM</h3>
+                        <p class="text-sm text-slate-600 mt-2">The discoverability core, providing a standardized catalog for all models and data.</p>
+                    </div>
+                    <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">MLflow</h3>
+                        <p class="text-sm text-slate-600 mt-2">The experimentation engine for tracking, packaging, and registering models.</p>
+                    </div>
+                    <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">Argo Workflows</h3>
+                        <p class="text-sm text-slate-600 mt-2">The lightweight orchestrator for running container-based training pipelines.</p>
+                    </div>
+                     <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">Seldon Core</h3>
+                        <p class="text-sm text-slate-600 mt-2">The advanced serving gateway for deploying complex inference graphs.</p>
+                    </div>
+                    <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">DVC</h3>
+                        <p class="text-sm text-slate-600 mt-2">The version control system for large-scale data, ensuring reproducibility.</p>
+                    </div>
+                     <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">MinIO</h3>
+                        <p class="text-sm text-slate-600 mt-2">The high-performance, S3-compatible storage for all artifacts and data.</p>
+                    </div>
+                    <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">Kubernetes</h3>
+                        <p class="text-sm text-slate-600 mt-2">The foundational layer providing a scalable and resilient execution environment.</p>
+                    </div>
+                     <div class="stack-item text-center p-6 bg-slate-50 rounded-xl border hover:shadow-lg transition">
+                        <h3 class="font-bold text-lg">PostgreSQL</h3>
+                        <p class="text-sm text-slate-600 mt-2">The robust database backend for both the STAC catalog and MLflow tracking.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Roadmap Section -->
+        <section id="roadmap" class="py-20">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-extrabold text-slate-900">Phased Implementation Roadmap</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">A tentative path for moving from local proof-of-concept to a fully operational, production-grade platform.</p>
+                </div>
+                <div class="relative">
+                    <div class="border-l-2 border-slate-300 absolute h-full top-0 left-4"></div>
+                    <div class="space-y-12">
+                        <div class="timeline-item pl-12 relative">
+                            <div class="timeline-dot h-4 w-4 rounded-full absolute top-1 -left-2 border-4 border-slate-50 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold">Phase 1: Local PoC </h3>
+                            <p class="text-slate-600 mt-1">Deploy the core backend services (Postgres, MinIO, MLflow, STAC API) using Docker Compose to validate basic integration and workflows on a local machine.</p>
+                        </div>
+                        <div class="timeline-item pl-12 relative">
+                            <div class="timeline-dot h-4 w-4 rounded-full absolute top-1 -left-2 border-4 border-slate-50 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold">Phase 2: Model Standardization </h3>
+                            <p class="text-slate-600 mt-1">Package a reference model (e.g., Building Detector) with a standard MLproject, Dockerfile, and STAC MLM item. Set up Git and DVC repositories.</p>
+                        </div>
+                        <div class="timeline-item pl-12 relative">
+                            <div class="timeline-dot h-4 w-4 rounded-full absolute top-1 -left-2 border-4 border-slate-50 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold">Phase 3: End-to-End on k3s </h3>
+                            <p class="text-slate-600 mt-1">Deploy the full stack to a single-instance cloud server with k3s. Implement and test the complete, automated Argo training pipeline and Seldon inference service.</p>
+                        </div>
+                        <div class="timeline-item pl-12 relative">
+                            <div class="timeline-dot h-4 w-4 rounded-full absolute top-1 -left-2 border-4 border-slate-50 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold">Phase 4: Production on EKS </h3>
+                            <p class="text-slate-600 mt-1">Provision a production-grade AWS EKS cluster using Terraform. Deploy all application components via Helm charts. Implement observability and autoscaling.</p>
+                        </div>
+                        <div class="timeline-item pl-12 relative">
+                             <div class="timeline-dot h-4 w-4 rounded-full absolute top-1 -left-2 border-4 border-slate-50 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold">Phase 5: Frontend & Adoption </h3>
+                            <p class="text-slate-600 mt-1">Develop the user-facing web application for model discovery and interactive inference. Conduct user testing and iterate based on feedback from the humanitarian community.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>Interactive Blueprint generated from source technical report. All content is derived from the "A Technical Blueprint for a Humanitarian Geospatial MLOps Platform" document which i am building haha.</p>
+        </div>
+    </footer>
+
+<script>
+    const platformData = {
+        'api-gateways': {
+            title: 'API Gateways',
+            content: "Serve as the single entry point for all external requests. They route traffic to the appropriate internal services, such as the STAC API for discovery, Argo for training triggers, or Seldon Core for inference. This simplifies the architecture and enhances security."
+        },
+        'stac': {
+            title: 'STAC API (w/ PgSTAC)',
+            content: "The heart of discovery. STAC (SpatioTemporal Asset Catalog) with the MLM (Machine Learning Model) extension provides a standardized, searchable 'card catalog' for all models. It's backed by PgSTAC (PostgreSQL + PostGIS) for scalable and powerful spatio-temporal querying, exposed via a FastAPI server."
+        },
+        'mlflow': {
+            title: 'MLflow',
+            content: "The core experimentation engine. We use MLflow for its three key features: <strong>Tracking</strong> to log all experiment parameters, metrics, and artifacts for reproducibility; <strong>Projects</strong> to package model code and dependencies into a standard format; and the <strong>Model Registry</strong> for versioning and managing the lifecycle of trained models (e.g., Staging, Production)."
+        },
+        'argo': {
+            title: 'Argo Workflows',
+            content: "The orchestration engine. Chosen over Kubeflow for its lightweight, modular, and Kubernetes-native design. Argo excels at one thing: running sequences of containers (workflows). It's used to automate the multi-step training pipelines, from fetching data with DVC to running the MLflow project and registering the resulting model."
+        },
+        'seldon': {
+            title: 'Seldon Core',
+            content: "The model serving gateway. Chosen over KServe for its excellent MLflow integration and its ability to run complex inference graphs locally with Docker Compose, drastically simplifying development. Seldon Core deploys models as production-grade, scalable API endpoints and can orchestrate multi-step inference pipelines, like sending a model's raw output to a custom post-processing transformer."
+        },
+        'dvc': {
+            title: 'DVC (Data Version Control)',
+            content: "The solution for versioning large datasets. Git is for code; DVC is for data. It works alongside Git to track large data files (like satellite imagery) without bloating the repository. This ensures that every training run is linked to the exact version of the data it used, a cornerstone of reproducibility."
+        },
+        'storage': {
+            title: 'Object Storage (MinIO/S3)',
+            content: "The unified storage foundation. A single S3-compatible object storage system (like self-hosted MinIO or AWS S3) serves as the backend for both MLflow artifacts (model weights, logs) and DVC-tracked data. This simplifies the infrastructure and reduces operational overhead."
+        }
+    };
+    
+    const workflowData = {
+        registration: `
+            <p class="text-center text-slate-600 mb-8">This workflow onboards a new, user-contributed model into the platform, making it discoverable and ready for automated training.</p>
+            <div class="space-y-6">
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">1</div>
+                    <div class="step-text">A <strong>Data Scientist</strong> prepares a model package: source code, a Dockerfile, and a STAC MLM metadata file.</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">2</div>
+                    <div class="step-text">A CI/CD pipeline (e.g., GitHub Actions) is triggered, which builds the Docker image and pushes it to a <strong>Container Registry</strong>.</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">3</div>
+                    <div class="step-text">The pipeline makes an API call to the <strong>STAC API</strong>, registering the model's metadata and linking to its container image.</div>
+                </div>
+                 <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">4</div>
+                    <div class="step-text">The model is also registered in the <strong>MLflow Model Registry</strong>, creating its first version.</div>
+                </div>
+            </div>
+        `,
+        training: `
+             <p class="text-center text-slate-600 mb-8">This workflow automates the process of retraining a model with new data to produce an updated, versioned artifact.</p>
+             <div class="space-y-6">
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">1</div>
+                    <div class="step-text">An <strong>Administrator</strong> triggers a training job via an API call, specifying the model and the new training data location (tracked by DVC).</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">2</div>
+                    <div class="step-text">The API Gateway submits a new job to <strong>Argo Workflows</strong>.</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">3</div>
+                    <div class="step-text">Argo spins up a Kubernetes pod using the model's specified Docker image, ensuring a consistent environment.</div>
+                </div>
+                 <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">4</div>
+                    <div class="step-text">Inside the pod, DVC pulls the data and <code>mlflow run .</code> executes the training script. All metrics and artifacts are logged to the <strong>MLflow Tracking Server</strong>.</div>
+                </div>
+                 <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">5</div>
+                    <div class="step-text">Upon success, the new model is versioned and registered in the <strong>MLflow Model Registry</strong> and a new STAC item is created.</div>
+                </div>
+            </div>
+        `,
+        inference: `
+             <p class="text-center text-slate-600 mb-8">This workflow allows end-users to run a production model on new data and receive analysis-ready results.</p>
+             <div class="space-y-6">
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">1</div>
+                    <div class="step-text">An <strong>End-User</strong> selects a model and an area of interest in the frontend application, which sends a request to the Inference API Gateway.</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">2</div>
+                    <div class="step-text">The request is routed to <strong>Seldon Core</strong>, which loads the specified model version from the MLflow Registry.</div>
+                </div>
+                <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">3</div>
+                    <div class="step-text">The model processes the input data (e.g., a satellite image) and produces a raw output (e.g., a raster mask).</div>
+                </div>
+                 <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">4</div>
+                    <div class="step-text">The raw output is passed to a <strong>Custom Post-Processing Transformer</strong> within the Seldon inference graph, which converts the raster to vector GeoJSON.</div>
+                </div>
+                 <div class="pl-5 h-6 border-l-2 border-slate-300 ml-5"></div>
+                <div class="step flex items-center">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center font-bold mr-4">5</div>
+                    <div class="step-text">The final GeoJSON is returned to the frontend and visualized on a map for the user.</div>
+                </div>
+            </div>
+        `
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const componentItems = document.querySelectorAll('.component-item');
+        const detailsTitle = document.getElementById('details-title');
+        const detailsContent = document.getElementById('details-content');
+
+        componentItems.forEach(item => {
+            item.addEventListener('click', function () {
+                const componentKey = this.dataset.component;
+                const componentData = platformData[componentKey];
+
+                componentItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                detailsTitle.textContent = componentData.title;
+                detailsContent.innerHTML = componentData.content;
+            });
+        });
+
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const workflowContent = document.getElementById('workflow-content');
+        
+        function updateWorkflowContent(tabKey) {
+            workflowContent.innerHTML = workflowData[tabKey];
+        }
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                const tabKey = this.dataset.tab;
+                updateWorkflowContent(tabKey);
+            });
+        });
+        
+        updateWorkflowContent('registration');
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 70) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active-nav');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active-nav');
+                }
+            });
+        });
+    });
+
+</script>
+</body>
+</html>
