@@ -1,6 +1,6 @@
 name: refugee-camp-detector
-conda_env: conda.yaml
-
+docker_env:
+  image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
 entry_points:
 
   preprocess:
@@ -18,7 +18,7 @@ entry_points:
 
   train:
     parameters:
-      mlflow_uri: {type: str, default: "http://localhost:5000"}
+      mlflow_uri: {type: str, default: "http://host.docker.internal:5000"}
       experiment: {type: str, default: "RefugeeCampDetection"}
       chips_dir: {type: str}
       labels_dir: {type: str}

@@ -4,15 +4,15 @@ from contextlib import redirect_stderr, redirect_stdout
 import mlflow
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import ModelCheckpoint
-
 from inference import log_inference_example
 from model import CampDataModule, LitRefugeeCamp
+from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import get_input_example, log_confusion_matrix
 
 
 def main(args):
     mlflow.pytorch.autolog(log_models=True)
+    print(f"Using MLflow URI: {args.mlflow_uri}")
     mlflow.set_tracking_uri(args.mlflow_uri)
     mlflow.set_experiment(args.experiment)
     mlflow.enable_system_metrics_logging()
