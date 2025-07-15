@@ -1,0 +1,29 @@
+ARG MLFLOW_VERSION=v3.1.1
+ARG BOTO3_VERSION=""
+ARG PSYCOPG2_VERSION=""
+
+FROM ghcr.io/mlflow/mlflow:${MLFLOW_VERSION} as base
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo "boto3${BOTO3_VERSION:+==}${BOTO3_VERSION}" > /tmp/requirements.txt && \
+    echo "psycopg2-binary${PSYCOPG2_VERSION:+==}${PSYCOPG2_VERSION}" >> /tmp/requirements.txt
+
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+
+FROM base as final
+
+COPY --from=base /usr/local/lib/python*/site-packages /usr/local/lib/python*/site-packages
+COPY --from=base /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+
+EXPOSE 5000
