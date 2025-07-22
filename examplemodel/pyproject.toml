@@ -10,6 +10,7 @@ dependencies = [
     "psutil>=7.0.0",
     "pynvml>=12.0.0",
     "pytorch-lightning>=2.5.2",
+    "stac-model>=0.3.0",
     "torch>=2.7.1",
     "torchvision>=0.22.1",
 ]

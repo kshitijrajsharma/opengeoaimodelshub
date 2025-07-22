@@ -8,9 +8,10 @@ from model import CampDataModule, LitRefugeeCamp
 from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import get_input_example, log_confusion_matrix
 
+# mlflow.autolog(log_models=True)
 
 def main(args):
-    mlflow.pytorch.autolog(log_models=True)
+    # mlflow.autolog(log_models=True)
     print(f"Using MLflow URI: {args.mlflow_uri}")
     mlflow.set_tracking_uri(args.mlflow_uri)
     # mlflow.set_experiment(args.experiment)
@@ -43,13 +44,13 @@ def main(args):
     if checkpoint.best_model_path:
         mlflow.log_artifact(checkpoint.best_model_path, artifact_path="checkpoints")
         model_to_log = LitRefugeeCamp.load_from_checkpoint(checkpoint.best_model_path)
-        sample_input_to_log = get_input_example(dm.train_dataloader(), torch.device("cuda" if torch.cuda.is_available() else "cpu")).cpu().detach().numpy()
+        # sample_input_to_log = get_input_example(dm.train_dataloader(), torch.device("cuda" if torch.cuda.is_available() else "cpu")).cpu().detach().numpy()
 
         mlflow.pytorch.log_model(
             model_to_log.model,
             name="model",
             registered_model_name=args.model_name,
-            input_example=sample_input_to_log,
+            # input_example=sample_input_to_log,
         )
 
     log_confusion_matrix(model.model, dm, mlflow)
