@@ -1,5 +1,4 @@
 import argparse
-from contextlib import redirect_stderr, redirect_stdout
 
 import mlflow
 import pytorch_lightning as pl
@@ -14,7 +13,7 @@ def main(args):
     mlflow.pytorch.autolog(log_models=True)
     print(f"Using MLflow URI: {args.mlflow_uri}")
     mlflow.set_tracking_uri(args.mlflow_uri)
-    mlflow.set_experiment(args.experiment)
+    # mlflow.set_experiment(args.experiment)
     mlflow.enable_system_metrics_logging()
 
 
@@ -35,12 +34,11 @@ def main(args):
         accelerator="auto",
         devices="auto",
         callbacks=[checkpoint],
-        log_every_n_steps=10,
+        log_every_n_steps=5,
     )
     model = LitRefugeeCamp(lr=args.lr)
     trainer.fit(model, datamodule=dm)
     trainer.test(model, datamodule=dm)
-
 
     if checkpoint.best_model_path:
         mlflow.log_artifact(checkpoint.best_model_path, artifact_path="checkpoints")

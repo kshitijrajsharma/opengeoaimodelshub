@@ -1,27 +1,28 @@
 name: refugee-camp-detector
-docker_env:
-  image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
-entry_points:
+# docker_env:
+#   image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
+# python_env: python_env.yaml
 
+entry_points:
   preprocess:
     parameters:
-      zoom:         {type: int,   default: 18}
-      bbox:         {type: list,  default: []}
-      tms:          {type: str}
-      train_dir:    {type: str,   default: "data/train/banepa"}
+      zoom:         {type: int,   default: 19}
+      bbox:         {type: str,  default: "85.51991979758662,27.628837632373674,85.52736620395387,27.633394557789373"}
+      tms:          {type: str,   default: "https://tiles.openaerialmap.org/62d85d11d8499800053796c1/0/62d85d11d8499800053796c2/{z}/{x}/{y}"}
+      train_dir:    {type: str,   default: "data/train/sample"}
     command: >
       python src/preprocess.py
       --zoom {zoom}
-      --bbox    ${bbox[0]} ${bbox[1]} ${bbox[2]} ${bbox[3]}
+      --bbox {bbox}
       --tms {tms}
       --train-dir    {train_dir}
 
   train:
     parameters:
-      mlflow_uri: {type: str, default: "http://mlflow-werb:5000"}
+      mlflow_uri: {type: str, default: "http://localhost:5000"}
       experiment: {type: str, default: "RefugeeCampDetection"}
-      chips_dir: {type: str}
-      labels_dir: {type: str}
+      chips_dir: {type: str, default: "data/train/sample/chips"}
+      labels_dir: {type: str, default: "data/train/sample/labels"}
       batch_size: {type: int, default: 32}
       epochs: {type: int, default: 10}
       lr: {type: float, default: 1e-3}

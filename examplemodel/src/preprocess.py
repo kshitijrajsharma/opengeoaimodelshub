@@ -13,14 +13,13 @@ def parse_args():
     p = argparse.ArgumentParser(
         description="Download TMS tiles + OSM labels, split and copy into train folders"
     )
-    p.add_argument("--zoom",       type=int,   default=18, help="Tile zoom level")
+    p.add_argument("--zoom", type=int, default=19, help="Tile zoom level")
     p.add_argument(
-        "--bbox", nargs=4, type=float, required=True,
-        metavar=("MIN_LON","MIN_LAT","MAX_LON","MAX_LAT"),
-        help="Bounding box: min_lon min_lat max_lon max_lat"
+        "--bbox", type=str, default="85.51991979758662,27.628837632373674,85.52736620395387,27.633394557789373",
+        help="Bounding box as a list: min_lon, min_lat, max_lon, max_lat"
     )
     p.add_argument(
-        "--tms", type=str, required=True,
+        "--tms", type=str, default="https://tiles.openaerialmap.org/62d85d11d8499800053796c1/0/62d85d11d8499800053796c2/{z}/{x}/{y}",
         help="Tile service URL template, e.g. https://…/{z}/{x}/{y}"
     )
     p.add_argument(
@@ -41,7 +40,7 @@ async def download_tiles_and_osm(args):
         tms=args.tms,
         zoom=args.zoom,
         out=args.download_dir,
-        bbox=args.bbox,
+        bbox=[float(x) for x in args.bbox.split(",")],
         georeference=True,
         dump_tile_geometries_as_geojson=True,
         prefix="OAM"

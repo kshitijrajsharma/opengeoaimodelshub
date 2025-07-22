@@ -1,0 +1,7 @@
+# python_env.yaml
+python: "3.13"
+
+
+# Runtime dependencies
+dependencies:
+  - requirements.txt

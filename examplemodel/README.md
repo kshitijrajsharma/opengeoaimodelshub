@@ -19,6 +19,24 @@ uv sync
 
 & you are done ! Easy Peasy ! 
 
+3. Get Mlflow UI up 
+
+```bash 
+uv run mlflow ui
+```
+
+4. Preprocess
+```bash 
+uv run mlflow run . -e preprocess --env-manager local
+```
+
+5. Train 
+
+```bash 
+uv run mlflow run . -e train --env-manager local
+
+```
+
 
 ## About this model 
 
