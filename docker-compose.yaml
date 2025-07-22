@@ -8,9 +8,9 @@ services:
     environment:
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
       MLFLOW_S3_IGNORE_TLS: "true"
-      AWS_ACCESS_KEY_ID: "mflow"
-      AWS_SECRET_ACCESS_KEY: "mflow123"
-    entrypoint: mlflow server --backend-store-uri postgresql+psycopg2://mlflow:mlflow123@postgres/mlflow --default-artifact-root s3://mlflow/ --artifacts-destination s3://mlflow/ -h 0.0.0.0
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-mlflow}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-mlflow123}"
+    entrypoint: mlflow server --backend-store-uri postgresql+psycopg2://${POSTGRES_USER:-mlflow}:${POSTGRES_PASSWORD:-mlflow123}@postgres/${POSTGRES_DB:-mlflow} --default-artifact-root s3://${MINIO_BUCKET_NAME:-mlflow}/ --artifacts-destination s3://${MINIO_BUCKET_NAME:-mlflow}/ -h 0.0.0.0
     depends_on:
       - minio
       - postgres
@@ -23,10 +23,13 @@ services:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-8900}:8900"
     environment:
-      MINIO_ACCESS_KEY: "mlflow"
-      MINIO_SECRET_KEY: "mlflow123"
+      MINIO_ACCESS_KEY: "${AWS_ACCESS_KEY_ID:-mlflow}"
+      MINIO_SECRET_KEY: "${AWS_SECRET_ACCESS_KEY:-mlflow123}"
     volumes:
       - "mlflow-minio:/data/minio"
+      # - ./entrypoints/minio.sh:/minio.sh
+    # entrypoint: ["sh", "-c", "chmod +x /minio.sh && /minio.sh"]
+
     command: 'minio server /data/minio --console-address ":8900"'
     networks:
       - mlflow-network
@@ -34,11 +37,11 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     environment:
-      POSTGRES_USER: "mlflow"
-      POSTGRES_PASSWORD: "mlflow123"
-      POSTGRES_DB: "mlflow"
+      POSTGRES_USER: "${POSTGRES_USER:-mlflow}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-mlflow123}"
+      POSTGRES_DB: "${POSTGRES_DB:-mlflow}"
     volumes:
       - "mlflow-postgres:/var/lib/postgresql/data"
     networks:

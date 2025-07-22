@@ -1,0 +1,17 @@
+# docker build -t dockerfile.test -f dockerfile.test .
+
+# docker run \
+#     --rm -v $(pwd):/app -w /app \
+#     --network mlflow-network \
+#     --env AWS_ACCESS_KEY_ID=mlflow \
+#     --env AWS_SECRET_ACCESS_KEY=mlflow123 \
+#     --env MLFLOW_S3_ENDPOINT_URL=http://minio:9000 \
+#     dockerfile.test python test.py
+
+FROM python:3.12-slim
+
+RUN pip install --no-cache-dir \
+    mlflow \
+    boto3 \
+    psycopg2-binary \
+    scikit-learn
