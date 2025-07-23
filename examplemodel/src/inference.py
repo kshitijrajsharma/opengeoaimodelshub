@@ -27,12 +27,12 @@ def log_inference_example(model, datamodule, mlflow_run):
         pred = model(x[:1])
 
     from torchvision.utils import save_image
-    save_image(x[0], "example_input.png")
-    save_image(pred[0], "example_pred.png")
-    save_image(y[0], "example_target.png")
-    mlflow_run.log_artifact("example_input.png", artifact_path="inference")
-    mlflow_run.log_artifact("example_pred.png", artifact_path="inference")
-    mlflow_run.log_artifact("example_target.png", artifact_path="inference")
+    save_image(x[0], "meta/example_input.png")
+    save_image(pred[0], "meta/example_pred.png")
+    save_image(y[0], "meta/example_target.png")
+    mlflow_run.log_artifact("meta/example_input.png", artifact_path="inference")
+    mlflow_run.log_artifact("meta/example_pred.png", artifact_path="inference")
+    mlflow_run.log_artifact("meta/example_target.png", artifact_path="inference")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

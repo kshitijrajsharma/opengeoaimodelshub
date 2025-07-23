@@ -21,15 +21,7 @@ def log_confusion_matrix(model, datamodule, mlflow_run, device="cpu"):
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.title("Pixel-wise Confusion Matrix")
-    plt.savefig("confusion_matrix.png")
-    mlflow_run.log_artifact("confusion_matrix.png", artifact_path="metrics")
+    plt.savefig("meta/confusion_matrix.png")
+    mlflow_run.log_artifact("meta/confusion_matrix.png", artifact_path="metrics")
     plt.close()
 
-
-
-def get_input_example(dataloader, device):
-    try:
-        sample_images, _ = next(iter(dataloader))
-        return sample_images[:1].to(device)
-    except StopIteration:
-        return torch.zeros(1, 3, 256, 256).to(device)

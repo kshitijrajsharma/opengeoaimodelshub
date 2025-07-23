@@ -297,7 +297,7 @@ def train(image_dir, label_dir, num_epochs=10, batch_size=32):
 
 if __name__ == "__main__":
 
-    TRAINING_DEST_DIR = os.path.join(os.getcwd(), "data/train/banepa")
+    TRAINING_DEST_DIR = os.path.join(os.getcwd(), "data/train/sample")
 
     image_dir = os.path.join(TRAINING_DEST_DIR, "chips")
     label_dir = os.path.join(TRAINING_DEST_DIR, "labels")
