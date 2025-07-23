@@ -16,3 +16,8 @@ dependencies = [
     "torch>=2.7.1",
     "torchvision>=0.22.1",
 ]
+
+[dependency-groups]
+ops = [
+    "boto3>=1.39.12",
+]
