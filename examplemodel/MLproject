@@ -43,3 +43,16 @@ entry_points:
       output_path: {type: str, default: "output_mask.png"}
     command: >
       python src/inference.py --model_path {model_path} --image_path {image_path} --output_path {output_path}
+
+  stac2esri:
+    parameters:
+      stac_path: {type: str, default: "meta/stacmlm_item.json"}
+      onnx_path: {type: str, default: "meta/best_model.onnx"}
+      out_dir:   {type: str, default: "meta"}
+      dlpk_name: {type: str, default: "refugee-camp-detector.dlpk"}
+    command: >
+      python src/stacmlm2dlpk.py
+      --stac {stac_path}
+      --onnx {onnx_path}
+      --out-dir {out_dir}
+      --dlpk-name {dlpk_name}

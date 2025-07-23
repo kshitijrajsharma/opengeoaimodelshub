@@ -16,7 +16,8 @@ from stac_model.input import InputStructure, ModelInput
 from stac_model.output import ModelOutput, ModelResult, MLMClassification
 from utils import log_confusion_matrix
 from mlflow.models.signature import infer_signature
-
+from stac2esri import stacmlm_to_emd, create_dlpk
+from pathlib import Path
 
 def create_stac_mlm_item(model, checkpoint_path, onnx_path):
     input_struct = InputStructure(
@@ -186,7 +187,12 @@ def main(args):
         stac_json_path = "meta/stac_item.json"
         with open(stac_json_path, 'w') as f:
             json.dump(stac_item.to_dict(), f, indent=2)
-        
+        emd_path = stacmlm_to_emd(Path(stac_json_path), Path("meta"))
+        dlpk_path = Path("meta") / "best_model.dlpk"
+        create_dlpk(emd_path, onnx_path, dlpk_path)
+
+        mlflow.log_artifact(dlpk_path, artifact_path="esri")
+        mlflow.log_artifact(emd_path, artifact_path="esri")
         mlflow.log_artifact(stac_json_path, artifact_path="metadata")
         mlflow.log_artifact(onnx_path, artifact_path="models")
 
