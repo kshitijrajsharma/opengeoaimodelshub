@@ -37,6 +37,15 @@ uv run mlflow run . -e train --env-manager local
 
 ```
 
+## Info about tracking to server 
+
+we use minio to store the artifacts in order to push : you need to configure following `.env` variable 
+
+```bash
+export AWS_ACCESS_KEY_ID=mlflow
+export AWS_SECRET_ACCESS_KEY=mlflow123
+export MLFLOW_S3_ENDPOINT_URL=http://your_remote_server_minio:9000
+```
 
 ## About this model 
 
