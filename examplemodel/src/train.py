@@ -60,6 +60,14 @@ def create_stac_mlm_item(model, checkpoint_path, onnx_path):
             roles=["mlm:model", "mlm:checkpoint"],
             extra_fields={"mlm:artifact_type": "pytorch_lightning"}
         ),
+        "pytorch-state-dict": pystac.Asset(
+            title="PyTorch State Dict",
+            description="PyTorch model state dictionary for refugee camp detection",
+            href="meta/best_model.pt",
+            media_type="application/octet-stream",
+            roles=["mlm:model", "mlm:weights"],
+            extra_fields={"mlm:artifact_type": "pytorch"}
+        ),
         "onnx-model": pystac.Asset(
             title="ONNX Model",
             description="ONNX format model for inference",
@@ -176,6 +184,8 @@ def main(args):
         signature = infer_signature(sample_input_numpy, sample_output_numpy)
         
         onnx_path = "meta/best_model.onnx"
+        pt_path = "meta/best_model.pt"
+        esri_inference_path = "esri/inference.py"
         export_to_onnx(model_to_log.model, onnx_path)
         
         stac_item = create_stac_mlm_item(
@@ -189,12 +199,14 @@ def main(args):
             json.dump(stac_item.to_dict(), f, indent=2)
         emd_path = stacmlm_to_emd(Path(stac_json_path), Path("meta"))
         dlpk_path = Path("meta") / "best_model.dlpk"
-        create_dlpk(emd_path, onnx_path, dlpk_path)
-
+        create_dlpk(emd_path, pt_path, esri_inference_path, dlpk_path)
+        torch.save(model_to_log.state_dict(), pt_path)
         mlflow.log_artifact(dlpk_path, artifact_path="esri")
         mlflow.log_artifact(emd_path, artifact_path="esri")
+
         mlflow.log_artifact(stac_json_path, artifact_path="metadata")
         mlflow.log_artifact(onnx_path, artifact_path="models")
+        mlflow.log_artifact(pt_path, artifact_path="models")
 
         mlflow.pytorch.log_model(
             model_to_log.model,

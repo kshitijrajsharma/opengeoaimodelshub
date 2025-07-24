@@ -5,7 +5,7 @@ import mlflow.pytorch
 import torch
 from PIL import Image
 from torchvision import transforms
-
+import numpy as np
 
 def predict_image(model, image_path):
     img = Image.open(image_path).convert('RGB')
@@ -17,7 +17,7 @@ def predict_image(model, image_path):
     x = tf(img).unsqueeze(0)
     with torch.no_grad():
         y_hat = model(x)
-    mask = (y_hat[0,0] > 0.5).cpu().numpy()
+    mask = (y_hat[0,0] > 0.5).cpu().numpy().astype(np.uint8)
     return mask
 
 def log_inference_example(model, datamodule, mlflow_run):
@@ -42,5 +42,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     model = mlflow.pytorch.load_model(args.model_path)
     mask = predict_image(model, args.image_path)
-    plt.imsave(args.output_path, mask, cmap="gray")
+    plt.imsave(args.output_path, mask * 255, cmap="gray", vmin=0, vmax=255)
     print(f"Inference mask saved to {args.output_path}")

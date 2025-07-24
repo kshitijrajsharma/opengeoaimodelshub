@@ -8,12 +8,12 @@ def stacmlm_to_emd(stac_path: Path, output_dir: Path) -> Path:
     stac = json.loads(stac_path.read_text())
     props = stac["properties"]
 
-    onnx_asset = next(
-        (v for v in stac["assets"].values() if v.get("mlm:artifact_type") == "onnx"),
+    pt_asset = next(
+        (v for v in stac["assets"].values() if v.get("mlm:artifact_type") == "pytorch"),
         None,
     )
-    if not onnx_asset:
-        raise ValueError("No ONNX model found in STAC MLM assets.")
+    if not pt_asset:
+        raise ValueError("No PyTorch model found in STAC MLM assets.")
 
     input_desc = props["mlm:input"][0]
     output_desc = props["mlm:output"][0]
@@ -23,17 +23,31 @@ def stacmlm_to_emd(stac_path: Path, output_dir: Path) -> Path:
     band_indices = [bands.index(b) + 1 for b in ["red", "green", "blue"] if b in bands]
 
     emd = {
-        "Framework": "onnx",
-        "ModelType": "SemanticSegmentation",
+        "Framework": "PyTorch",
+        "ModelType": "SemanticSegmentation", 
         "Architecture": props.get("mlm:architecture", "U-Net"),
-        "ModelFile": "model.onnx",
+        "ModelFile": "model.pt",
+        "InferenceFunction": "inference.py",
         "ImageHeight": input_desc["input"]["shape"][2],
         "ImageWidth": input_desc["input"]["shape"][3],
         "ExtractBands": band_indices,
-        "Classes": [{"Value": c["value"], "Name": c["name"]} for c in class_defs],
         "DataRange": [0, 1],
-        "BatchSize": 1,
+        "BatchSize": 64,
         "ImageType": "RGB",
+        "Classes": [
+            {
+                "Value": 0,
+                "Name": "Background",
+                "Color": [0, 0, 0],
+                "Transparent": True
+            },
+            {
+                "Value": 1,
+                "Name": "Refugee Camp",
+                "Color": [255, 0, 0]    
+            }
+        ],
+        "Threshold": 0.5
     }
 
     emd_path = output_dir / "model.emd"
@@ -42,10 +56,11 @@ def stacmlm_to_emd(stac_path: Path, output_dir: Path) -> Path:
     return emd_path
 
 
-def create_dlpk(emd_path: Path, onnx_path: Path, output_dlpk: Path):
+def create_dlpk(emd_path: Path, pt_path: Path, inference_path: Path, output_dlpk: Path):
     with zipfile.ZipFile(output_dlpk, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(emd_path, arcname="model.emd")
-        zipf.write(onnx_path, arcname="model.onnx")
+        zipf.write(pt_path, arcname="model.pt")
+        zipf.write(inference_path, arcname="inference.py")
 
 
 def main():
@@ -54,9 +69,9 @@ def main():
     )
     parser.add_argument("--stac", required=True, help="Path to STAC-MLM JSON")
     parser.add_argument(
-        "--onnx",
+        "--pt",
         required=False,
-        help="Path to ONNX model (optional; inferred from STAC if relative)",
+        help="Path to PyTorch model (optional; inferred from STAC if relative)",
     )
     parser.add_argument(
         "--out-dir", default="output", help="Output directory (default: ./output)"
@@ -72,25 +87,30 @@ def main():
     output_dir = Path(args.out_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.onnx:
-        onnx_path = Path(args.onnx)
+    if args.pt:
+        pt_path = Path(args.pt)
     else:
         stac = json.loads(stac_path.read_text())
-        onnx_asset = next(
+        pt_asset = next(
             (
                 v
                 for v in stac["assets"].values()
-                if v.get("mlm:artifact_type") == "onnx"
+                if v.get("mlm:artifact_type") == "pytorch"
             ),
             None,
         )
-        if not onnx_asset:
-            raise ValueError("No ONNX model asset found in STAC file.")
-        onnx_path = (stac_path.parent / onnx_asset["href"]).resolve()
+        if not pt_asset:
+            raise ValueError("No PyTorch model asset found in STAC file.")
+        pt_path = (stac_path.parent / pt_asset["href"]).resolve()
+
+    # Look for inference.py in the same directory as the script
+    inference_path = Path(__file__).parent / "inference.py"
+    if not inference_path.exists():
+        raise ValueError(f"inference.py not found at {inference_path}")
 
     emd_path = stacmlm_to_emd(stac_path, output_dir)
     dlpk_path = output_dir / args.dlpk_name
-    create_dlpk(emd_path, onnx_path, dlpk_path)
+    create_dlpk(emd_path, pt_path, inference_path, dlpk_path)
 
     print(f"DLPK created at: {dlpk_path}")
 
