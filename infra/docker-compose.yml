@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   traefik:
     image: traefik:v3.0
@@ -44,6 +42,7 @@ services:
     container_name: homepage
     restart: unless-stopped
     environment:
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS,${HOMEPAGE_VAR_DOMAIN}}
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TZ}
