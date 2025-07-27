@@ -21,7 +21,7 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo -e "${RED}Docker Compose is not installed${NC}"
     exit 1
 fi
@@ -72,20 +72,20 @@ chmod 600 volumes/traefik-data/acme.json
 chown -R $USER:$USER volumes/
 
 echo -e "${YELLOW}Stopping any existing services...${NC}"
-docker-compose down --remove-orphans 2>/dev/null || true
+docker compose down --remove-orphans 2>/dev/null || true
 
 echo -e "${YELLOW}Pulling images from registries...${NC}"
 echo -e "${BLUE}Using MLflow image: ${MLFLOW_IMAGE}${NC}"
-docker-compose pull
+docker compose pull
 
 echo -e "${YELLOW}Starting services...${NC}"
-docker-compose up -d
+docker compose up -d
 
 echo -e "${YELLOW}Waiting for services to initialize...${NC}"
 sleep 30
 
 echo -e "\n${BLUE}Service Status:${NC}"
-docker-compose ps
+docker compose ps
 
 echo -e "\n${YELLOW}Setting up systemd service...${NC}"
 sudo tee /etc/systemd/system/tech-infra.service > /dev/null << EOF
@@ -100,8 +100,8 @@ RemainAfterExit=yes
 User=$USER
 Group=$USER
 WorkingDirectory=$(pwd)
-ExecStart=/usr/bin/docker-compose up -d
-ExecStop=/usr/bin/docker-compose down
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
 
 [Install]
@@ -116,35 +116,35 @@ cat > manage.sh << 'EOF'
 
 case "$1" in
     start)
-        docker-compose up -d
+        docker compose up -d
         ;;
     stop)
-        docker-compose down
+        docker compose down
         ;;
     restart)
-        docker-compose restart ${2:-}
+        docker compose restart ${2:-}
         ;;
     logs)
         if [ -z "$2" ]; then
-            docker-compose logs
+            docker compose logs
         else
-            docker-compose logs -f "$2"
+            docker compose logs -f "$2"
         fi
         ;;
     status)
-        docker-compose ps
+        docker compose ps
         ;;
     update)
         echo "Pulling latest images..."
-        docker-compose pull
+        docker compose pull
         echo "Restarting services with latest images..."
-        docker-compose up -d
+        docker compose up -d
         ;;
     backup)
         BACKUP_DIR="./backups/$(date +%Y%m%d_%H%M%S)"
         mkdir -p "$BACKUP_DIR"
         cp -r volumes/ "$BACKUP_DIR/"
-        docker-compose exec -T postgres pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} > "$BACKUP_DIR/postgres_dump.sql"
+        docker compose exec -T postgres pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} > "$BACKUP_DIR/postgres_dump.sql"
         echo "Backup created: $BACKUP_DIR"
         ;;
     *)
