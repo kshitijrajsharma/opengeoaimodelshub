@@ -183,6 +183,3 @@ echo -e "  Database: ${POSTGRES_DB}"
 echo -e "  Username: ${POSTGRES_USER}"
 echo -e "  Password: [from .env file]"
 echo -e "  SSL Mode: Require"
-
-echo -e "\n${BLUE}MLflow Image Source: ${MLFLOW_IMAGE}${NC}"
-echo -e "${GREEN}No local building required - using published image!${NC}"
