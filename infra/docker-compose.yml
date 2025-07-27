@@ -42,7 +42,7 @@ services:
     container_name: homepage
     restart: unless-stopped
     environment:
-      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS,${HOMEPAGE_VAR_DOMAIN}}
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS}
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TZ}
