@@ -1,0 +1,178 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${TRAEFIK_DATA_DIR:-./volumes/traefik-data}:/data
+    command:
+      - --api.dashboard=true
+      - --api.insecure=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.postgres.address=:5432
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --log.level=INFO
+      - --accesslog=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH_USER}:${TRAEFIK_AUTH_PASSWORD_HASH}"
+    networks:
+      - traefik-network
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${HOMEPAGE_CONFIG:-./homepage-config}:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homepage.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
+      - "traefik.http.routers.homepage.entrypoints=websecure"
+      - "traefik.http.routers.homepage.tls.certresolver=letsencrypt"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+    networks:
+      - traefik-network
+
+  mlflow-web:
+    image: ${MLFLOW_IMAGE:-ghcr.io/kshitijrajsharma/opengeoaimodelshub/mlflow:latest}
+    container_name: mlflow-web
+    restart: unless-stopped
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
+      MLFLOW_S3_IGNORE_TLS: "true"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+    entrypoint: mlflow server --backend-store-uri postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB} --default-artifact-root s3://${MINIO_BUCKET_NAME}/ --artifacts-destination s3://${MINIO_BUCKET_NAME}/ -h 0.0.0.0
+    depends_on:
+      - minio
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mlflow.rule=Host(`mlflow.${DOMAIN}`)"
+      - "traefik.http.routers.mlflow.entrypoints=websecure"
+      - "traefik.http.routers.mlflow.tls.certresolver=letsencrypt"
+      - "traefik.http.services.mlflow.loadbalancer.server.port=5000"
+    networks:
+      - traefik-network
+      - mlflow-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: "${AWS_ACCESS_KEY_ID}"
+      MINIO_SECRET_KEY: "${AWS_SECRET_ACCESS_KEY}"
+    volumes:
+      - "${MINIO_DATA_DIR:-./volumes/minio}:/data/minio"
+    command: 'minio server /data/minio --console-address ":9001"'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio-api.rule=Host(`minio-api.${DOMAIN}`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-api.service=minio-api"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-console.rule=Host(`minio.${DOMAIN}`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-console.service=minio-console"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+    networks:
+      - traefik-network
+      - mlflow-network
+
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_MULTIPLE_EXTENSIONS: postgis,hstore,postgis_topology,postgis_raster,pgrouting
+    volumes:
+      - "${POSTGRES_DATA_DIR:-./volumes/postgres}:/var/lib/postgresql/data"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.postgres.rule=HostSNI(`postgres.${DOMAIN}`)"
+      - "traefik.tcp.routers.postgres.entrypoints=postgres"
+      - "traefik.tcp.routers.postgres.service=postgres"
+      - "traefik.tcp.services.postgres.loadbalancer.server.port=5432"
+      - "traefik.tcp.routers.postgres.tls=true"
+      - "traefik.tcp.routers.postgres.tls.certresolver=letsencrypt"
+    networks:
+      - mlflow-network
+      - traefik-network
+
+  hbbs:
+    container_name: hbbs
+    image: rustdesk/rustdesk-server:latest
+    restart: unless-stopped
+    environment:
+      - ALWAYS_USE_RELAY=Y
+    command: hbbs -r rustdesk.${DOMAIN} -k _
+    volumes:
+      - "${RUSTDESK_DATA_DIR:-./volumes/rustdesk}:/root"
+    ports:
+      - "21115:21115"
+      - "21116:21116"
+      - "21116:21116/udp"
+      - "21118:21118"
+    depends_on:
+      - hbbr
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rustdesk.rule=Host(`rustdesk.${DOMAIN}`)"
+      - "traefik.http.routers.rustdesk.entrypoints=websecure"
+      - "traefik.http.routers.rustdesk.tls.certresolver=letsencrypt"
+      - "traefik.http.services.rustdesk.loadbalancer.server.port=21118"
+    networks:
+      - traefik-network
+
+  hbbr:
+    container_name: hbbr
+    image: rustdesk/rustdesk-server:latest
+    restart: unless-stopped
+    command: hbbr -k _
+    volumes:
+      - "${RUSTDESK_DATA_DIR:-./volumes/rustdesk}:/root"
+    ports:
+      - "21117:21117"
+      - "21119:21119"
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    name: traefik-network
+    driver: bridge
+  mlflow-network:
+    name: mlflow-network
+    driver: bridge

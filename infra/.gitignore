@@ -1,0 +1,24 @@
+# Environment files
+.env
+homepage-config/.env
+
+# Data volumes
+volumes/
+
+# Logs
+logs/
+
+# Backups
+backups/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log

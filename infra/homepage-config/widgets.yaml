@@ -1,0 +1,29 @@
+---
+- search:
+    provider: duckduckgo
+    target: _blank
+    showSearchSuggestions: true
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: full
+      timeStyle: short
+      hourCycle: h24
+
+- resources:
+    label: System Resources
+    cpu: true
+    memory: true
+    disk: /
+    expanded: true
+    units: metric
+
+- openweathermap:
+    label: Weather
+    latitude: 0.0
+    longitude: 0.0
+    units: metric
+    provider: openweathermap
+    apiKey: your-openweather-api-key
+    cache: 5
