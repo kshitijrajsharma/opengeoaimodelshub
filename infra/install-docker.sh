@@ -7,8 +7,6 @@ echo "Installing Git, Docker, and Docker Compose on Debian..."
 echo "Updating system packages..."
 sudo apt update && sudo apt upgrade -y
 
-echo "Installing Git..."
-sudo apt install -y git
 
 echo "Installing Docker prerequisites..."
 sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
