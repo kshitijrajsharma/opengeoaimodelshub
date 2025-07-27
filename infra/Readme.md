@@ -16,7 +16,7 @@ Self-hosted infrastructure stack with Traefik, MLflow, MinIO, PostgreSQL, and Ru
 1. **Clone and configure:**
    ```bash
    git clone <this-repo>
-   cd tech-infra
+   cd infra
    cp .env.template .env
    cp homepage-config/.env.template homepage-config/.env
    nano .env  # Edit with your domain and credentials
