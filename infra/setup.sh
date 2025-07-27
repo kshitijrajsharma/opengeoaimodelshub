@@ -150,7 +150,7 @@ case "$1" in
     *)
         echo "Usage: $0 {start|stop|restart|logs|status|update|backup}"
         echo "Examples:"
-        echo "  $0 logs mlflow-web  # View MLflow logs"
+        echo "  $0 logs mlflow  # View MLflow logs"
         echo "  $0 restart postgres # Restart PostgreSQL"
         echo "  $0 update          # Pull latest images and restart"
         ;;
@@ -171,7 +171,7 @@ echo -e "  PostgreSQL Database: postgres.${DOMAIN}:5432"
 
 echo -e "\n${GREEN}Management Commands:${NC}"
 echo -e "  ./manage.sh status         # Check all services"
-echo -e "  ./manage.sh logs mlflow-web # View MLflow logs"
+echo -e "  ./manage.sh logs mlflow # View MLflow logs"
 echo -e "  ./manage.sh restart postgres # Restart database"
 echo -e "  ./manage.sh update         # Pull latest images"
 echo -e "  ./manage.sh backup         # Create full backup"

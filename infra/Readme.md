@@ -52,7 +52,7 @@ Connect to PostgreSQL using DBeaver or any PostgreSQL client:
 
 ```bash
 ./manage.sh status          # Check service status
-./manage.sh logs mlflow-web # View MLflow logs
+./manage.sh logs mlflow # View MLflow logs
 ./manage.sh restart postgres # Restart database
 ./manage.sh update          # Pull latest images
 ./manage.sh backup          # Create backup

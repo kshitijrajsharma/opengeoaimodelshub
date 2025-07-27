@@ -32,8 +32,8 @@ services:
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH_USER}:${TRAEFIK_AUTH_PASSWORD_HASH}"
+      # - "traefik.http.routers.traefik.middlewares=auth"
+      # - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH_USER}:${TRAEFIK_AUTH_PASSWORD}"
     networks:
       - traefik-network
 
@@ -55,12 +55,13 @@ services:
       - "traefik.http.routers.homepage.entrypoints=websecure"
       - "traefik.http.routers.homepage.tls.certresolver=letsencrypt"
       - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+      - "traefik.http.services.homepage.loadbalancer.server.url=http://homepage:3000"
     networks:
       - traefik-network
 
-  mlflow-web:
+  mlflow:
     image: ${MLFLOW_IMAGE:-ghcr.io/kshitijrajsharma/opengeoaimodelshub/mlflow:latest}
-    container_name: mlflow-web
+    container_name: mlflow
     restart: unless-stopped
     environment:
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
@@ -77,9 +78,10 @@ services:
       - "traefik.http.routers.mlflow.entrypoints=websecure"
       - "traefik.http.routers.mlflow.tls.certresolver=letsencrypt"
       - "traefik.http.services.mlflow.loadbalancer.server.port=5000"
+      - "traefik.http.services.mlflow.loadbalancer.server.url=http://mlflow:5000"
     networks:
       - traefik-network
-      - mlflow-network
+      # - mlflow-network
 
   minio:
     image: minio/minio:latest
@@ -98,14 +100,16 @@ services:
       - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-api.service=minio-api"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      - "traefik.http.services.minio-api.loadbalancer.server.url=http://minio:9000"
       - "traefik.http.routers.minio-console.rule=Host(`minio.${DOMAIN}`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-console.service=minio-console"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+      - "traefik.http.services.minio-console.loadbalancer.server.url=http://minio:9001"
     networks:
       - traefik-network
-      - mlflow-network
+      # - mlflow-network
 
   postgres:
     image: postgis/postgis:16-3.4-alpine
@@ -127,7 +131,7 @@ services:
       - "traefik.tcp.routers.postgres.tls=true"
       - "traefik.tcp.routers.postgres.tls.certresolver=letsencrypt"
     networks:
-      - mlflow-network
+      # - mlflow-network
       - traefik-network
 
   hbbs:
@@ -152,6 +156,7 @@ services:
       - "traefik.http.routers.rustdesk.entrypoints=websecure"
       - "traefik.http.routers.rustdesk.tls.certresolver=letsencrypt"
       - "traefik.http.services.rustdesk.loadbalancer.server.port=21118"
+      - "traefik.http.services.rustdesk.loadbalancer.server.url=http://hbbs:21118"
     networks:
       - traefik-network
 
@@ -172,6 +177,6 @@ networks:
   traefik-network:
     name: traefik-network
     driver: bridge
-  mlflow-network:
-    name: mlflow-network
-    driver: bridge
+  # mlflow-network:
+  #   name: mlflow-network
+  #   driver: bridge
