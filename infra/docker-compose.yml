@@ -140,7 +140,7 @@ services:
     restart: unless-stopped
     environment:
       - ALWAYS_USE_RELAY=Y
-    command: hbbs -r rustdesk.${DOMAIN} -k _
+    command: hbbs -r rustdesk.${DOMAIN} -k ${RUSTDESK_KEY}
     volumes:
       - "${RUSTDESK_DATA_DIR:-./volumes/rustdesk}:/root"
     ports:
@@ -164,7 +164,7 @@ services:
     container_name: hbbr
     image: rustdesk/rustdesk-server:latest
     restart: unless-stopped
-    command: hbbr -k _
+    command: hbbr -k ${RUSTDESK_KEY}
     volumes:
       - "${RUSTDESK_DATA_DIR:-./volumes/rustdesk}:/root"
     ports:
