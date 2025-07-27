@@ -18,10 +18,11 @@ Self-hosted infrastructure stack with Traefik, MLflow, MinIO, PostgreSQL, and Ru
    git clone <this-repo>
    cd infra
    cp .env.template .env
-   cp homepage-config/.env.template homepage-config/.env
    nano .env  # Edit with your domain and credentials
    ```
 
+   - Replace `example.com` with your domain name in `/homepage-config`
+   
 2. **Run setup:**
    ```bash
    chmod +x setup.sh

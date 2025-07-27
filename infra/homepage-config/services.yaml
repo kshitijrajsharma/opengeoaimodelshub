@@ -1,35 +1,35 @@
 ---
 - Machine Learning:
     - MLflow:
-        href: https://mlflow.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://mlflow.example.com
         description: ML experiment tracking
         icon: mlflow.png
 
 - Storage:
     - MinIO Console:
-        href: https://minio.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://minio.example.com
         description: Object storage console
         icon: minio.png
 
     - MinIO API:
-        href: https://minio-api.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://minio-api.example.com
         description: S3-compatible API
         icon: minio.png
 
 - Database:
     - PostgreSQL + PostGIS:
-        href: postgres.{{HOMEPAGE_VAR_DOMAIN}}
-        description: Database via postgres.{{HOMEPAGE_VAR_DOMAIN}}:5432
+        href: postgres.example.com
+        description: Database via postgres.example.com:5432
         icon: postgres.png
 
 - Remote Access:
     - RustDesk:
-        href: https://rustdesk.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://rustdesk.example.com
         description: Remote desktop server
         icon: https://github.com/rustdesk/rustdesk/raw/master/res/icon.png
 
 - System:
     - Traefik:
-        href: https://traefik.{{HOMEPAGE_VAR_DOMAIN}}
+        href: https://traefik.example.com
         description: Reverse proxy dashboard
         icon: traefik.png

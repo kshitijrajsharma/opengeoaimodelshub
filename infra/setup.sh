@@ -8,6 +8,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+generate_password() {
+    local length=${1:-16}
+    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length
+}
+
+
+generate_key() {
+    local length=${1:-32}
+    openssl rand -hex $length
+}
+
 echo -e "${BLUE}Tech Infrastructure Setup${NC}"
 echo -e "${BLUE}========================${NC}\n"
 
@@ -26,13 +37,55 @@ if ! command -v docker compose &> /dev/null; then
     exit 1
 fi
 
+if ! command -v openssl &> /dev/null; then
+    echo -e "${RED}OpenSSL is required for generating secure credentials${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}Docker and Docker Compose are ready${NC}\n"
 
 if [ ! -f ".env" ]; then
     if [ -f ".env.template" ]; then
         echo -e "${YELLOW}Creating .env from template...${NC}"
         cp .env.template .env
-        echo -e "${RED}Please edit .env file with your credentials before continuing${NC}"
+        
+        echo -e "${YELLOW}Generating secure credentials...${NC}"
+        
+        # Generate secure credentials
+        POSTGRES_PASSWORD=$(generate_password 20)
+        AWS_ACCESS_KEY=$(generate_key 20)
+        AWS_SECRET_KEY=$(generate_key 40)
+        RUSTDESK_KEY=$(generate_key 16)
+        TRAEFIK_PASSWORD=$(generate_password 16)
+        
+        # Generate Traefik password hash (doubled $ for docker-compose)
+        TRAEFIK_HASH=$(docker run --rm httpd:2.4-alpine htpasswd -nbB admin "$TRAEFIK_PASSWORD" 2>/dev/null | cut -d ":" -f 2 | sed 's/\$/\$\$/g')
+        
+        # Replace unique placeholders in .env file
+        sed -i "s|replace-with-postgres-user|postgres|g" .env
+        sed -i "s|replace-with-postgres-password|$POSTGRES_PASSWORD|g" .env
+        sed -i "s|replace-with-aws-access-key|$AWS_ACCESS_KEY|g" .env
+        sed -i "s|replace-with-aws-secret-key|$AWS_SECRET_KEY|g" .env
+        sed -i "s|replace-with-traefik-password|$TRAEFIK_PASSWORD|g" .env
+        sed -i "s|replace-with-traefik-hash|$TRAEFIK_HASH|g" .env
+        sed -i "s|replace-with-rustdesk-key|$RUSTDESK_KEY|g" .env
+        
+        echo -e "${GREEN}✓ Generated PostgreSQL password${NC}"
+        echo -e "${GREEN}✓ Generated MinIO/AWS credentials${NC}"
+        echo -e "${GREEN}✓ Generated Traefik authentication${NC}"
+        echo -e "${GREEN}✓ Generated RustDesk key${NC}"
+
+        echo -e "\n${BLUE}IMPORTANT: Save these credentials securely!${NC}"
+        echo -e "${YELLOW}Traefik Dashboard Credentials:${NC}"
+        echo -e "  Username: admin"
+        echo -e "  Password: $TRAEFIK_PASSWORD"
+        echo -e "\n${YELLOW}PostgreSQL Database Credentials:${NC}"
+        echo -e "  Username: postgres"
+        echo -e "  Password: $POSTGRES_PASSWORD"
+        echo -e "\n${YELLOW}MinIO/S3 Credentials:${NC}"
+        echo -e "  Access Key: $AWS_ACCESS_KEY"
+        echo -e "  Secret Key: $AWS_SECRET_KEY"
+        echo -e "\n${RED}Please update DOMAIN and ACME_EMAIL in .env before continuing${NC}"
         echo -e "${YELLOW}Run: nano .env${NC}"
         exit 1
     else
@@ -50,17 +103,14 @@ fi
 
 source .env
 
-if [ "$TRAEFIK_AUTH_PASSWORD_HASH" = "replace-with-generated-hash" ]; then
-    echo -e "${YELLOW}Generating Traefik authentication...${NC}"
-    read -p "Enter password for Traefik dashboard: " -s TRAEFIK_PASSWORD
-    echo
-    
-    HASH=$(docker run --rm httpd:2.4-alpine htpasswd -nbB admin "$TRAEFIK_PASSWORD" 2>/dev/null | cut -d ":" -f 2 | sed 's/\$/\$\$/g')
-    
-    sed -i "s|TRAEFIK_AUTH_PASSWORD_HASH=.*|TRAEFIK_AUTH_PASSWORD_HASH=$HASH|" .env
-    
-    echo -e "${GREEN}Traefik authentication configured${NC}"
+# Validate that domain and email are set
+if [ "$DOMAIN" = "example.com" ] || [ "$ACME_EMAIL" = "admin@example.com" ]; then
+    echo -e "${RED}Please update DOMAIN and ACME_EMAIL in .env file${NC}"
+    echo -e "${YELLOW}Run: nano .env${NC}"
+    exit 1
 fi
+
+echo -e "${GREEN}Configuration validated${NC}\n"
 
 echo -e "${YELLOW}Creating directories...${NC}"
 mkdir -p volumes/{traefik-data,minio,postgres,rustdesk}
@@ -171,15 +221,33 @@ echo -e "  PostgreSQL Database: postgres.${DOMAIN}:5432"
 
 echo -e "\n${GREEN}Management Commands:${NC}"
 echo -e "  ./manage.sh status         # Check all services"
-echo -e "  ./manage.sh logs mlflow # View MLflow logs"
+echo -e "  ./manage.sh logs mlflow    # View MLflow logs"
 echo -e "  ./manage.sh restart postgres # Restart database"
 echo -e "  ./manage.sh update         # Pull latest images"
 echo -e "  ./manage.sh backup         # Create full backup"
 
-echo -e "\n${GREEN}Database Connection (DBeaver):${NC}"
+echo -e "\n${BLUE}=== CREDENTIALS ===\n${NC}"
+echo -e "${GREEN}Traefik Dashboard:${NC}"
+echo -e "  URL: https://traefik.${DOMAIN}"
+echo -e "  Username: ${TRAEFIK_AUTH_USER}"
+echo -e "  Password: ${TRAEFIK_AUTH_PASSWORD}"
+
+echo -e "\n${GREEN}PostgreSQL Database:${NC}"
 echo -e "  Host: postgres.${DOMAIN}"
 echo -e "  Port: 5432"
 echo -e "  Database: ${POSTGRES_DB}"
 echo -e "  Username: ${POSTGRES_USER}"
-echo -e "  Password: [from .env file]"
-echo -e "  SSL Mode: Require"
+echo -e "  Password: ${POSTGRES_PASSWORD}"
+
+echo -e "\n${GREEN}MinIO/S3 Storage:${NC}"
+echo -e "  Console: https://minio.${DOMAIN}"
+echo -e "  API: https://minio-api.${DOMAIN}"
+echo -e "  Access Key: ${AWS_ACCESS_KEY_ID}"
+echo -e "  Secret Key: ${AWS_SECRET_ACCESS_KEY}"
+
+echo -e "\n${GREEN}MLflow Tracking:${NC}"
+echo -e "  URL: https://mlflow.${DOMAIN}"
+echo -e "  Uses PostgreSQL backend and MinIO storage"
+
+echo -e "\n${YELLOW}These credentials are also stored in your .env file${NC}"
+echo -e "${RED}IMPORTANT: Keep your .env file secure and backed up!${NC}"
