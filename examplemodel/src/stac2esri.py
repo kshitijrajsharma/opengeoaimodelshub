@@ -55,7 +55,7 @@ def create_dlpk(emd_path: Path, pt_path: Path, inference_path: Path, output_dlpk
     with zipfile.ZipFile(output_dlpk, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(emd_path, arcname="model.emd")
         zipf.write(pt_path, arcname="model.pt")
-        zipf.write(inference_path, arcname="inference.py")
+        zipf.write(inference_path, arcname="RefugeeCampDetector.py")
 
 
 def main():
