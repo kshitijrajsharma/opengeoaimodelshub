@@ -1,7 +1,6 @@
 import json
 import os
-import pathlib
-import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -9,177 +8,139 @@ try:
     import torch
 
     HAS_PYTORCH = True
-except Exception:
+except:
     HAS_PYTORCH = False
 
+SCRIPT_DIR = Path(__file__).parent
+LOG_PATH = SCRIPT_DIR / "rcd_debug.log"
 
-class GeometryType:
-    Point = 1
-    Multipoint = 2
-    Polyline = 3
-    Polygon = 4
+
+def log(msg):
+    with open(LOG_PATH, "a") as f:
+        f.write(msg + "\n")
 
 
 class RefugeeCampDetector:
     def __init__(self):
-        self.name = "RefugeeCampDetector"
-        self.description = "Detects refugee camp/buildings in imagery as polygons"
+        log("Shree Ganeshaya Namah")
+        self.name = "Refugee Camp Detector"
+        self.description = "Classifies pixels as refugee camp or background"
 
     def initialize(self, **kwargs):
-        if "model" not in kwargs:
+        log(f"INITIALIZE {kwargs}")
+        model = kwargs.get("model")
+        if not model:
+            log("NO MODEL")
             return
-        model = kwargs["model"]
-        model_as_file = True
         try:
             with open(model, "r") as f:
                 self.json_info = json.load(f)
+                log("LOADED JSON FILE")
         except FileNotFoundError:
             self.json_info = json.loads(model)
-            model_as_file = False
+            log("LOADED JSON STRING")
         model_path = self.json_info["ModelFile"]
-        if model_as_file and not os.path.isabs(model_path):
+        if not os.path.isabs(model_path):
             model_path = os.path.abspath(
                 os.path.join(os.path.dirname(model), model_path)
             )
         self.model_path = model_path
         self.model_is_loaded = False
+        log(f"MODEL PATH {self.model_path}")
 
     def load_model(self):
+        log("LOAD_MODEL")
         if not HAS_PYTORCH:
-            raise Exception("PyTorch is not installed.")
-        self.model = torch.jit.load(self.model_path, map_location="cpu")
-        self.model.eval()
+            log("PYTORCH MISSING")
+            raise Exception("PyTorch not installed")
+        try:
+            self.model = torch.jit.load(self.model_path, map_location="cpu")
+            self.model.eval()
+            self.model_is_loaded = True
+            log(f"MODEL LOADED TYPE {type(self.model)}")
+        except Exception as e:
+            log(f"LOAD ERROR {e}")
+            raise
 
     def getParameterInfo(self):
-        required_parameters = [
-            {
-                "name": "raster",
-                "dataType": "raster",
-                "required": True,
-                "displayName": "Raster",
-                "description": "Input Raster",
-            },
-            {
-                "name": "model",
-                "dataType": "string",
-                "required": True,
-                "displayName": "Input Model Definition (EMD) File",
-                "description": "Input model definition (EMD) JSON file",
-            },
-            {
-                "name": "device",
-                "dataType": "numeric",
-                "required": False,
-                "displayName": "Device ID",
-                "description": "Device ID",
-            },
+        return [
+            {"name": "raster", "dataType": "raster", "required": True},
+            {"name": "model", "dataType": "string", "required": True},
             {
                 "name": "batch_size",
                 "dataType": "numeric",
                 "required": False,
-                "value": 1
-                if "BatchSize" not in self.json_info
-                else int(self.json_info["BatchSize"]),
-                "displayName": "Batch Size",
-                "description": "Batch Size",
+                "value": self.json_info.get("BatchSize", 1),
             },
             {
                 "name": "threshold",
                 "dataType": "numeric",
                 "required": False,
-                "value": 0.5
-                if "Threshold" not in self.json_info
-                else float(self.json_info["Threshold"]),
-                "displayName": "Confidence Score Threshold [0.0, 1.0]",
-                "description": "Confidence score threshold value [0.0, 1.0]",
+                "value": self.json_info.get("Threshold", 0.5),
             },
         ]
-        return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.batch_size = int(
-            scalars.get("batch_size", self.json_info.get("BatchSize", 1))
-        )
-        self.thres = float(
-            scalars.get("threshold", self.json_info.get("Threshold", 0.5))
-        )
-        self.ImageHeight = self.json_info["ImageHeight"]
-        self.ImageWidth = self.json_info["ImageWidth"]
-        configuration = {
-            "batch_size": self.batch_size,
-            "tx": self.ImageWidth,
-            "ty": self.ImageHeight,
-            "extractBands": tuple(self.json_info.get("ExtractBands", [1, 2, 3])),
+        bs = int(scalars.get("batch_size", self.json_info.get("BatchSize", 1)))
+        thr = float(scalars.get("threshold", self.json_info.get("Threshold", 0.5)))
+        tx = self.json_info["ImageWidth"]
+        ty = self.json_info["ImageHeight"]
+        bands = tuple(self.json_info.get("ExtractBands", [1, 2, 3]))
+        return {
+            "batch_size": bs,
+            "tx": tx,
+            "ty": ty,
+            "extractBands": bands,
             "dataRange": tuple(self.json_info.get("DataRange", [0, 1])),
             "inputMask": True,
             "inheritProperties": 2 | 4 | 8,
         }
-        self.scalars = scalars
-        return configuration
 
-    def getFields(self):
-        fields = [
-            {"name": "OID", "type": "esriFieldTypeOID", "alias": "OID"},
-            {"name": "Classname", "type": "esriFieldTypeString", "alias": "Classname"},
-            {
-                "name": "Classvalue",
-                "type": "esriFieldTypeInteger",
-                "alias": "Classvalue",
-            },
-            {
-                "name": "Confidence",
-                "type": "esriFieldTypeDouble",
-                "alias": "Confidence",
-            },
-        ]
-        return json.dumps(fields)
+    def updateRasterInfo(self, **kwargs):
+        kwargs["output_info"]["bandCount"] = 1
+        kwargs["output_info"]["pixelType"] = "u1"
+        return kwargs
 
-    def getGeometryType(self):
-        return GeometryType.Polygon
-
-    def vectorize(self, **pixelBlocks):
-        raster_mask = pixelBlocks["raster_mask"]
-        raster_pixels = pixelBlocks["raster_pixels"]
-        raster_pixels[np.where(raster_mask == 0)] = 0
-        pixelBlocks["raster_pixels"] = raster_pixels
+    def updatePixels(self, tlc, shape, props, **pixelBlocks):
+        log(f"UPDATEPIXELS tile={tlc} shape={shape}")
+        mask = pixelBlocks["raster_mask"]
+        pix = pixelBlocks["raster_pixels"]  # (3, 256, 256)
+        pix[mask == 0] = 0
         if not self.model_is_loaded:
             self.load_model()
-            self.model_is_loaded = True
-        input_images = pixelBlocks["raster_pixels"]
-        batch = input_images[np.newaxis] if input_images.ndim == 3 else input_images
-        batch = batch.astype(np.float32) / 255.0
-        batch = np.transpose(batch, (0, 3, 1, 2))
-        batch_tensor = torch.from_numpy(batch)
+        arr = pix.astype(np.float32)  # (3, 256, 256)
+        log(f"ARRAY shape before batching: {arr.shape}")
+        if arr.ndim == 3:
+            arr = arr[np.newaxis]  # (1, 3, 256, 256)
+        log(f"ARRAY shape after batching: {arr.shape}")
+        bands = self.json_info.get("ExtractBands", [0, 1, 2])
+        idx = [b if min(bands) == 0 else b - 1 for b in bands]
+        arr = arr[:, idx, :, :]  # (1, 3, 256, 256)
+        log(f"ARRAY shape after band selection hai guys : {arr.shape}")
+        if arr.max() > 1.0:
+            arr = arr / 255.0  # (1, 3, 256, 256)
+        mp = self.json_info.get("ModelParameters", {})
+        mean = np.array(mp.get("mean", [0.485, 0.456, 0.406]))[None, :, None, None]
+        std = np.array(mp.get("std", [0.229, 0.224, 0.225]))[None, :, None, None]
+        arr = (arr - mean) / std  # (1, 3, 256, 256)
+        log(f"ARRAY shape after normalization: {arr.shape}")
+        tensor = torch.from_numpy(arr).float()  # (1, 3, 256, 256)
+        log(
+            f"TENSOR shape={tuple(tensor.shape)} dtype={tensor.dtype} numel={tensor.numel()}"
+        )
         with torch.no_grad():
-            logits = self.model(batch_tensor)
-            if logits.shape[1] > 1:
-                probs = torch.softmax(logits, dim=1)
-                masks = probs[:, 1] > self.thres
-            else:
-                probs = torch.sigmoid(logits)
-                masks = probs > self.thres
-            masks = masks.cpu().numpy()
-        features = {"features": []}
-        for idx, mask in enumerate(masks):
-            from skimage import measure
-
-            mask_bin = (mask > 0).astype(np.uint8)
-            contours = measure.find_contours(mask_bin, 0.5)
-            for i, contour in enumerate(contours):
-                contour = np.flip(contour, axis=1)
-                rings = [[[float(x), float(y)] for x, y in contour]]
-                features["features"].append(
-                    {
-                        "attributes": {
-                            "OID": i + 1,
-                            "Classname": "refugee_camp",
-                            "Classvalue": 1,
-                            "Confidence": float(np.mean(mask_bin)),
-                        },
-                        "geometry": {"rings": rings},
-                    }
-                )
-        return {"output_vectors": json.dumps(features)}
-
-    def inference(self, batch, **scalars):
-        pass
+            out = self.model(tensor)
+        log(f"OUTPUT type={type(out)} shape={tuple(out.shape)}")
+        if out.shape[1] == 1:
+            preds = (torch.sigmoid(out) > self.json_info.get("Threshold", 0.5)).float()
+        else:
+            preds = torch.argmax(torch.softmax(out, 1), 1, keepdim=True).float()
+        res = preds.cpu().numpy()  # shape: (1, 1, 256, 256)
+        log(f"PREDICTIONS shape={res.shape} & dim = {res.ndim}")
+        res = res[0, 0]  # (H, W)
+        res = res.astype(np.uint8)
+        pixelBlocks["output_pixels"] = res
+        log(
+            f"OUTPUT PIXELS shape= aba yo aayena vane i will be mad {pixelBlocks['output_pixels'].shape}"
+        )
+        return pixelBlocks
