@@ -82,7 +82,7 @@ def create_stac_mlm_item(model, checkpoint_path, onnx_path):
     accelerator = "cuda" if torch.cuda.is_available() else "amd64"
 
     ml_model_meta = MLModelProperties(
-        name="Refugee Camp Detector",
+        name="RefugeeCampDetector",
         architecture="U-Net",
         tasks={"semantic-segmentation"},
         framework="pytorch",
@@ -194,7 +194,7 @@ def main(args):
         pt_path = "meta/best_model.pt"
         pth_path = "meta/best_model.pth"
         current_dir = Path(__file__).parent.absolute()
-        esri_inference_path = current_dir / "esri" / "inference.py"
+        esri_inference_path = current_dir / "esri" / "RefugeeCampDetector.py"
         export_to_onnx(model_to_log, onnx_path)
 
         sample_input_tensor = torch.from_numpy(sample_input_numpy).cpu()

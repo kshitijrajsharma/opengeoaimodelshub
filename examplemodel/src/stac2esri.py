@@ -20,34 +20,29 @@ def stacmlm_to_emd(stac_path: Path, output_dir: Path) -> Path:
     bands = input_desc.get("bands", ["red", "green", "blue"])
     class_defs = output_desc.get("classification:classes", [])
 
-    band_indices = [bands.index(b) + 1 for b in ["red", "green", "blue"] if b in bands]
-
     emd = {
         "Framework": "PyTorch",
-        "ModelType": "SemanticSegmentation", 
+        "ModelType": "ImageClassification",
+        "ModelName": props.get("mlm:name", "RefugeeCampDetector"),
         "Architecture": props.get("mlm:architecture", "U-Net"),
         "ModelFile": "model.pt",
-        "InferenceFunction": "inference.py",
+        "InferenceFunction": "RefugeeCampDetector.py",
         "ImageHeight": input_desc["input"]["shape"][2],
         "ImageWidth": input_desc["input"]["shape"][3],
-        "ExtractBands": band_indices,
+        "ImageSpaceUsed": "MAP_SPACE",
+        "ExtractBands": [0, 1, 2],
         "DataRange": [0, 1],
-        "BatchSize": 64,
+        "BatchSize": 1,
         "ImageType": "RGB",
         "Classes": [
-            {
-                "Value": 0,
-                "Name": "Background",
-                "Color": [0, 0, 0],
-                "Transparent": True
-            },
-            {
-                "Value": 1,
-                "Name": "Refugee Camp",
-                "Color": [255, 0, 0]    
-            }
+            {"Value": 0, "Name": "Background", "Color": [0, 0, 0]},
+            {"Value": 1, "Name": "Refugee Camp", "Color": [255, 0, 0]},
         ],
-        "Threshold": 0.5
+        "ModelParameters": {
+            "mean": [0.485, 0.456, 0.406],
+            "std": [0.229, 0.224, 0.225],
+        },
+        "Threshold": 0.5,
     }
 
     emd_path = output_dir / "model.emd"
