@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 try:
     import torch
@@ -104,8 +105,10 @@ class RefugeeCampDetector:
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
         log(f"UPDATEPIXELS tile={tlc} shape={shape}")
         mask = pixelBlocks["raster_mask"]
+        log(f"MASK unique values: {np.unique(mask)}")
         pix = pixelBlocks["raster_pixels"]  # (3, 256, 256)
         pix[mask == 0] = 0
+        log(f"PIX nonzero after masking: {np.count_nonzero(pix)}")
         if not self.model_is_loaded:
             self.load_model()
         arr = pix.astype(np.float32)  # (3, 256, 256)
@@ -119,10 +122,21 @@ class RefugeeCampDetector:
         log(f"ARRAY shape after band selection hai guys : {arr.shape}")
         if arr.max() > 1.0:
             arr = arr / 255.0  # (1, 3, 256, 256)
+
+        # arr_to_save = arr[0]  # (3, H, W)
+        # arr_img = np.transpose(arr_to_save, (1, 2, 0))  # (H, W, 3)
+        # arr_img = (arr_img * 255).clip(0, 255).astype(np.uint8)
+        # img = Image.fromarray(arr_img)
+        # img.save(f"{SCRIPT_DIR}/input_tile.png")
+
         mp = self.json_info.get("ModelParameters", {})
         mean = np.array(mp.get("mean", [0.485, 0.456, 0.406]))[None, :, None, None]
         std = np.array(mp.get("std", [0.229, 0.224, 0.225]))[None, :, None, None]
+
+        log(f"INPUT before norm min: {arr.min()} max: {arr.max()} mean: {arr.mean()}")
+
         arr = (arr - mean) / std  # (1, 3, 256, 256)
+        log(f"INPUT after norm min: {arr.min()} max: {arr.max()} mean: {arr.mean()}")
         log(f"ARRAY shape after normalization: {arr.shape}")
         tensor = torch.from_numpy(arr).float()  # (1, 3, 256, 256)
         log(
@@ -131,16 +145,12 @@ class RefugeeCampDetector:
         with torch.no_grad():
             out = self.model(tensor)
         log(f"OUTPUT type={type(out)} shape={tuple(out.shape)}")
-        if out.shape[1] == 1:
-            preds = (torch.sigmoid(out) > self.json_info.get("Threshold", 0.5)).float()
-        else:
-            preds = torch.argmax(torch.softmax(out, 1), 1, keepdim=True).float()
-        res = preds.cpu().numpy()  # shape: (1, 1, 256, 256)
-        log(f"PREDICTIONS shape={res.shape} & dim = {res.ndim}")
-        res = res[0, 0]  # (H, W)
+
+        probas = torch.sigmoid(out)  # (1, 1, H, W)
+        log(f"PROBA MIN: {probas.min().item()} MAX: {probas.max().item()}")
+        threshold = float(self.json_info.get("Threshold", 0.5))
+        mask = (probas > threshold).float()  # (1, 1, H, W)
+        res = mask.cpu().numpy()[0, 0]  # (H, W)
         res = res.astype(np.uint8)
         pixelBlocks["output_pixels"] = res
-        log(
-            f"OUTPUT PIXELS shape= aba yo aayena vane i will be mad {pixelBlocks['output_pixels'].shape}"
-        )
         return pixelBlocks
