@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+import torch.nn.functional as F
 from PIL import Image
 
 try:
@@ -68,13 +69,13 @@ class RefugeeCampDetector:
             {"name": "raster", "dataType": "raster", "required": True},
             {"name": "model", "dataType": "string", "required": True},
             {
-                "name": "batch_size",
+                "name": "BatchSize",
                 "dataType": "numeric",
                 "required": False,
                 "value": self.json_info.get("BatchSize", 1),
             },
             {
-                "name": "threshold",
+                "name": "Threshold",
                 "dataType": "numeric",
                 "required": False,
                 "value": self.json_info.get("Threshold", 0.5),
@@ -82,13 +83,14 @@ class RefugeeCampDetector:
         ]
 
     def getConfiguration(self, **scalars):
-        bs = int(scalars.get("batch_size", self.json_info.get("BatchSize", 1)))
-        thr = float(scalars.get("threshold", self.json_info.get("Threshold", 0.5)))
+        bs = int(scalars.get("BatchSize", self.json_info.get("BatchSize", 1)))
+        thr = float(scalars.get("Threshold", self.json_info.get("Threshold", 0.5)))
         tx = self.json_info["ImageWidth"]
         ty = self.json_info["ImageHeight"]
         bands = tuple(self.json_info.get("ExtractBands", [1, 2, 3]))
         return {
-            "batch_size": bs,
+            "BatchSize": bs,
+            "Threshold": thr,
             "tx": tx,
             "ty": ty,
             "extractBands": bands,
@@ -144,13 +146,38 @@ class RefugeeCampDetector:
         )
         with torch.no_grad():
             out = self.model(tensor)
-        log(f"OUTPUT type={type(out)} shape={tuple(out.shape)}")
+        log(f"OUTPUT type={type(out)}")
 
-        probas = torch.sigmoid(out)  # (1, 1, H, W)
+        if isinstance(
+            out, tuple
+        ):  # usually yolo predictions are in tuple because they have mask and pred this wil change
+            log(f"OUTPUT is tuple of length {len(out)}")
+            if len(out) == 2:
+                pred, mask = out[0], out[1]
+                log(f"Shape of pred : {pred.shape}, shape of mask {mask.shape}")
+            else:
+                mask = out[0]
+                log(f"USING out[0] with shape {out.shape}")
+
+            mask_agg = mask.max(1, keepdim=True)[0]  # shape: (1, 1, 64, 64) for yolo
+            log(f"out shape {mask_agg.shape}")
+            mask_up = F.interpolate(
+                mask_agg, size=(256, 256), mode="bilinear", align_corners=False
+            )  # shape: (1, 1, 256, 256)
+            res_up = mask_up
+        else:
+            res_up = out
+        log(f"out shape {res_up.shape}")
+
+        probas = torch.sigmoid(res_up)  # (1, 1, H, W)
         log(f"PROBA MIN: {probas.min().item()} MAX: {probas.max().item()}")
-        threshold = float(self.json_info.get("Threshold", 0.5))
-        mask = (probas > threshold).float()  # (1, 1, H, W)
-        res = mask.cpu().numpy()[0, 0]  # (H, W)
-        res = res.astype(np.uint8)
-        pixelBlocks["output_pixels"] = res
+        mask = (probas > 0.95).float()
+        # probas = torch.sigmoid(out)  # (1, 1, H, W)
+        # log(f"PROBA MIN: {probas.min().item()} MAX: {probas.max().item()}")
+        # threshold = float(self.json_info.get("Threshold", 0.5))
+        # mask = (probas > threshold).float()  # (1, 1, H, W)
+        log(f"Mask Shape : {mask.shape}")
+        out_mask = (mask.cpu().numpy() * 255)[0, 0].astype(np.uint8)
+        pixelBlocks["output_pixels"] = out_mask
+        # log (test)
         return pixelBlocks
