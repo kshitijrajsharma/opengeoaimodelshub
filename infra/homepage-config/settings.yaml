@@ -1,0 +1,37 @@
+---
+title: Tech Infrastructure Services
+theme: dark
+color: slate
+headerStyle: clean
+hideVersion: true
+showStats: true
+statusStyle: dot
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  hideVisitURL: true
+
+layout:
+  Machine Learning:
+    style: row
+    columns: 2
+    tab: Development
+  Storage:
+    style: row
+    columns: 2
+    tab: Infrastructure
+  Database:
+    style: row
+    columns: 2
+    tab: Infrastructure
+  Remote Access:
+    style: row
+    columns: 2
+    tab: Tools
+  System:
+    style: row
+    columns: 2
+    tab: Admin
+
+language: en
+target: _blank

@@ -4,4 +4,4 @@ examplemodel/lightning_logs
 examplemodel/src/__pycache__
 examplemodel/checkpoints
 examplemodel/meta
-*.env*
+*.env
