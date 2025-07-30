@@ -90,7 +90,7 @@ services:
     environment:
       MINIO_ACCESS_KEY: "${AWS_ACCESS_KEY_ID}"
       MINIO_SECRET_KEY: "${AWS_SECRET_ACCESS_KEY}"
-      MINIO_IDENTITY_OPENID: "on"
+      MINIO_IDENTITY_TYPE: "internal"
     volumes:
       - "${MINIO_DATA_DIR:-./volumes/minio}:/data/minio"
     command: 'minio server /data/minio --console-address ":9001"'

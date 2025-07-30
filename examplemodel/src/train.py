@@ -19,6 +19,9 @@ from stac_model.output import MLMClassification, ModelOutput, ModelResult
 from stac_model.schema import MLModelExtension, MLModelProperties
 from utils import log_confusion_matrix
 
+from dotenv import load_dotenv
+
+load_dotenv() # loads env from .env for the s3 configuration to log artifacts into the server
 
 def create_stac_mlm_item(model, checkpoint_path, onnx_path):
     input_struct = InputStructure(
