@@ -162,18 +162,23 @@ def log_inference_example(model, data_module):
             prediction = torch.sigmoid(outputs[0]).squeeze().cpu().numpy()
             target = targets[0].squeeze().cpu().numpy()
             
+            # Convert prediction to binary (0 or 1)
+            prediction_binary = (prediction > 0.5).astype(np.uint8)
+            target_binary = target.astype(np.uint8)
+            
             fig, axes = plt.subplots(1, 3, figsize=(15, 5))
             
             axes[0].imshow(input_img)
             axes[0].set_title("Input Image")
             axes[0].axis('off')
             
-            axes[1].imshow(prediction, cmap='hot')
-            axes[1].set_title("Prediction")
+            # Use binary colormap (black=0, white=1)
+            axes[1].imshow(prediction_binary, cmap='gray', vmin=0, vmax=1)
+            axes[1].set_title("Prediction (Binary)")
             axes[1].axis('off')
             
-            axes[2].imshow(target, cmap='hot')
-            axes[2].set_title("Ground Truth")
+            axes[2].imshow(target_binary, cmap='gray', vmin=0, vmax=1)
+            axes[2].set_title("Ground Truth (Binary)")
             axes[2].axis('off')
             
             plt.tight_layout()
@@ -181,13 +186,15 @@ def log_inference_example(model, data_module):
             plt.close()
             
             plt.figure(figsize=(5, 5))
-            plt.imshow(prediction, cmap='hot')
+            plt.imshow(prediction_binary, cmap='gray', vmin=0, vmax=1)
+            plt.title("Prediction (Binary)")
             plt.axis('off')
             plt.savefig("meta/example_pred.png", dpi=300, bbox_inches='tight')
             plt.close()
             
             plt.figure(figsize=(5, 5))
-            plt.imshow(target, cmap='hot')
+            plt.imshow(target_binary, cmap='gray', vmin=0, vmax=1)
+            plt.title("Ground Truth (Binary)")
             plt.axis('off')
             plt.savefig("meta/example_target.png", dpi=300, bbox_inches='tight')
             plt.close()
