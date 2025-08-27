@@ -471,6 +471,7 @@ name = "examplemodel"
 version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
+    { name = "boto3" },
     { name = "dotenv" },
     { name = "geomltoolkits" },
     { name = "jsonschema" },
@@ -499,6 +500,7 @@ validation = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", specifier = ">=1.39.12" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "geomltoolkits", specifier = ">=0.3.9" },
     { name = "jsonschema", specifier = ">=4.0.0" },
