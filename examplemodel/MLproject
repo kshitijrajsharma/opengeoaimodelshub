@@ -1,7 +1,6 @@
 name: refugee-camp-detector
-# docker_env:
-#   image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
-# python_env: python_env.yaml
+docker_env:
+  image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
 
 entry_points:
   preprocess:
@@ -11,7 +10,7 @@ entry_points:
       tms:          {type: str,   default: "https://tiles.openaerialmap.org/62d85d11d8499800053796c1/0/62d85d11d8499800053796c2/{z}/{x}/{y}"}
       train_dir:    {type: str,   default: "data/train/sample"}
     command: >
-      python src/preprocess.py
+      uv run python src/preprocess.py
       --zoom {zoom}
       --bbox {bbox}
       --tms {tms}
@@ -19,39 +18,44 @@ entry_points:
 
   train:
     parameters:
-      mlflow_uri: {type: str, default: "http://localhost:5000"}
-      experiment: {type: str, default: "RefugeeCampDetection"}
+      epochs: {type: int, default: 1}
+      batch_size: {type: int, default: 32}
       chips_dir: {type: str, default: "data/train/sample/chips"}
       labels_dir: {type: str, default: "data/train/sample/labels"}
-      batch_size: {type: int, default: 32}
-      epochs: {type: int, default: 10}
       lr: {type: float, default: 1e-3}
     command: >
-      python src/train.py
-      --mlflow_uri {mlflow_uri}
-      --experiment {experiment}
+      uv run python src/train.py 
+      --epochs {epochs}
+      --batch_size {batch_size}
       --chips_dir {chips_dir}
       --labels_dir {labels_dir}
-      --batch_size {batch_size}
-      --epochs {epochs}
       --lr {lr}
 
   inference:
     parameters:
-      model_path: {type: str}
       image_path: {type: str}
-      output_path: {type: str, default: "output_mask.png"}
+      model_path: {type: str, default: "meta/best_model.pt"}
+      output_dir: {type: str, default: "output"}
+      mlflow_tracking: {type: bool, default: false}
     command: >
-      python src/inference.py --model_path {model_path} --image_path {image_path} --output_path {output_path}
+      uv run python src/inference.py {image_path}
+      --model_path {model_path}
+      --output_dir {output_dir}
+      {{--mlflow_tracking if mlflow_tracking}}
+
+  validate_stac:
+    parameters:
+      stac_file: {type: str, default: "meta/stac_item.json"}
+    command: "uv run python validate_stac_mlm.py {stac_file}"
 
   stac2esri:
     parameters:
-      stac_path: {type: str, default: "meta/stacmlm_item.json"}
+      stac_path: {type: str, default: "meta/stac_item.json"}
       onnx_path: {type: str, default: "meta/best_model.onnx"}
       out_dir:   {type: str, default: "meta"}
       dlpk_name: {type: str, default: "refugee-camp-detector.dlpk"}
     command: >
-      python src/stacmlm2dlpk.py
+      uv run python src/stac2esri.py
       --stac {stac_path}
       --onnx {onnx_path}
       --out-dir {out_dir}
