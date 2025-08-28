@@ -1,0 +1,372 @@
+{
+  "type": "Feature",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/mlm/v1.5.0/schema.json",
+    "https://stac-extensions.github.io/file/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/processing/v1.1.0/schema.json"
+  ],
+  "id": "refugee-camp-detector-v1.0.0",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "properties": {
+    "datetime": "2025-08-27T18:04:24.121967Z",
+    "created": "2025-08-27T18:04:24.121967Z",
+    "updated": "2025-08-27T18:04:24.121967Z",
+    "title": "Refugee Camp Detection Model",
+    "description": "Deep learning model for detecting refugee camps in satellite imagery using semantic segmentation",
+    "keywords": [
+      "refugee-camps",
+      "humanitarian",
+      "semantic-segmentation",
+      "satellite-imagery",
+      "u-net",
+      "pytorch"
+    ],
+    "license": "MIT",
+    "mission": "humanitarian-response",
+    "platform": "satellite",
+    "instrument": "optical",
+    "bands": [
+      {
+        "name": "red",
+        "common_name": "red",
+        "description": "Red channel of RGB satellite imagery (630-690 nm)",
+        "center_wavelength": 0.665,
+        "full_width_half_max": 0.03
+      },
+      {
+        "name": "green",
+        "common_name": "green",
+        "description": "Green channel of RGB satellite imagery (525-575 nm)",
+        "center_wavelength": 0.555,
+        "full_width_half_max": 0.03
+      },
+      {
+        "name": "blue",
+        "common_name": "blue",
+        "description": "Blue channel of RGB satellite imagery (450-515 nm)",
+        "center_wavelength": 0.485,
+        "full_width_half_max": 0.03
+      }
+    ],
+    "providers": [
+      {
+        "name": "OpenGeoAIModelsHub",
+        "roles": [
+          "producer"
+        ],
+        "url": "https://github.com/kshitijrajsharma/opengeoaimodelshub"
+      }
+    ],
+    "mlm:name": "RefugeeCampDetector",
+    "mlm:architecture": "U-Net",
+    "mlm:tasks": [
+      "semantic-segmentation"
+    ],
+    "mlm:framework": "PyTorch",
+    "mlm:framework_version": "2.7.1",
+    "mlm:memory_size": 8958468,
+    "mlm:total_parameters": 2239617,
+    "mlm:pretrained": true,
+    "mlm:pretrained_source": "ImageNet",
+    "mlm:accelerator": "cpu",
+    "mlm:accelerator_constrained": false,
+    "mlm:accelerator_summary": "CUDA compatible GPUs for optimal performance, CPU fallback available",
+    "mlm:accelerator_count": 1,
+    "mlm:batch_size_suggestion": 32,
+    "mlm:input": [
+      {
+        "name": "satellite_image",
+        "description": "RGB satellite image normalized with ImageNet statistics for transfer learning",
+        "bands": [
+          "red",
+          "green",
+          "blue"
+        ],
+        "input": {
+          "shape": [
+            -1,
+            3,
+            256,
+            256
+          ],
+          "dim_order": [
+            "batch",
+            "bands",
+            "height",
+            "width"
+          ],
+          "data_type": "float32"
+        },
+        "value_scaling": [
+          {
+            "type": "z-score",
+            "mean": 0.485,
+            "stddev": 0.229
+          },
+          {
+            "type": "z-score",
+            "mean": 0.456,
+            "stddev": 0.224
+          },
+          {
+            "type": "z-score",
+            "mean": 0.406,
+            "stddev": 0.225
+          }
+        ]
+      }
+    ],
+    "mlm:output": [
+      {
+        "name": "segmentation_mask",
+        "description": "Binary segmentation mask identifying refugee camp areas with pixel-level predictions",
+        "tasks": [
+          "semantic-segmentation"
+        ],
+        "result": {
+          "shape": [
+            -1,
+            1,
+            256,
+            256
+          ],
+          "dim_order": [
+            "batch",
+            "channel",
+            "height",
+            "width"
+          ],
+          "data_type": "float32"
+        },
+        "classification:classes": [
+          {
+            "value": 0,
+            "name": "background",
+            "description": "Non-refugee camp areas including natural terrain, urban areas, and other land uses"
+          },
+          {
+            "value": 1,
+            "name": "refugee_camp",
+            "description": "Areas identified as refugee camps with temporary structures and settlements"
+          }
+        ]
+      }
+    ],
+    "processing:facility": "macOS-26.0-arm64-arm-64bit-Mach-O",
+    "processing:software": {
+      "pytorch": "2.7.1",
+      "lightning": "2.5.2",
+      "python": "3.13.2"
+    },
+    "processing:expression": {
+      "format": "pytorch",
+      "expression": "U-Net semantic segmentation with ImageNet pretrained backbone"
+    }
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "./stac_item.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "root",
+      "href": "./",
+      "type": "application/json"
+    }
+  ],
+  "assets": {
+    "pytorch-checkpoint": {
+      "href": "/Users/krschap/intern/opengeoaimodelshub/examplemodel/checkpoints/epoch=epoch=0-step=step=5-v8.ckpt",
+      "type": "application/octet-stream; framework=pytorch-lightning",
+      "title": "PyTorch Lightning Checkpoint",
+      "description": "Complete model checkpoint with training state for PyTorch Lightning",
+      "roles": [
+        "mlm:model",
+        "mlm:checkpoint"
+      ],
+      "mlm:artifact_type": "pytorch_lightning",
+      "file:size": 26896416
+    },
+    "pytorch-state-dict": {
+      "href": "meta/best_model.pt",
+      "type": "application/octet-stream; framework=pytorch",
+      "title": "PyTorch TorchScript Model",
+      "description": "TorchScript traced model for optimized inference",
+      "roles": [
+        "mlm:model",
+        "mlm:weights"
+      ],
+      "mlm:artifact_type": "torch.jit.trace",
+      "mlm:compile_method": "jit"
+    },
+    "pytorch-state-dict-raw": {
+      "href": "meta/best_model.pth",
+      "type": "application/octet-stream; framework=pytorch",
+      "title": "PyTorch Raw State Dictionary",
+      "description": "Raw PyTorch model state dictionary (.pth format)",
+      "roles": [
+        "mlm:model",
+        "mlm:weights"
+      ],
+      "mlm:artifact_type": "pytorch"
+    },
+    "onnx-model": {
+      "href": "meta/best_model.onnx",
+      "type": "application/octet-stream; framework=onnx",
+      "title": "ONNX Model",
+      "description": "ONNX format model for cross-platform inference and deployment",
+      "roles": [
+        "mlm:model",
+        "mlm:inference"
+      ],
+      "mlm:artifact_type": "onnx",
+      "mlm:compile_method": "aot"
+    },
+    "source-code": {
+      "href": "https://github.com/kshitijrajsharma/opengeoaimodelshub",
+      "type": "text/html",
+      "title": "Model Source Code Repository",
+      "description": "Complete source code repository for training and inference",
+      "roles": [
+        "mlm:source_code",
+        "code",
+        "metadata"
+      ],
+      "mlm:entrypoint": "src.inference:predict_image"
+    },
+    "inference-script": {
+      "href": "src/inference.py",
+      "type": "text/x-python",
+      "title": "Enhanced Inference Script",
+      "description": "Python script for running model inference with metadata tracking",
+      "roles": [
+        "mlm:source_code",
+        "code"
+      ],
+      "mlm:entrypoint": "predict_image_enhanced"
+    },
+    "training-script": {
+      "href": "src/train.py",
+      "type": "text/x-python",
+      "title": "Enhanced Training Script",
+      "description": "Python script for model training pipeline with STAC-MLM metadata",
+      "roles": [
+        "mlm:training",
+        "code"
+      ]
+    },
+    "container-image": {
+      "href": "ghcr.io/kshitijrajsharma/opengeoaimodelshub:master",
+      "type": "application/vnd.oci.image.index.v1+json",
+      "title": "Docker Container Image",
+      "description": "Docker container with complete runtime environment",
+      "roles": [
+        "mlm:container",
+        "runtime"
+      ]
+    },
+    "requirements": {
+      "href": "requirements.txt",
+      "type": "text/plain",
+      "title": "Python Requirements",
+      "description": "Python package requirements for running the model",
+      "roles": [
+        "runtime",
+        "metadata"
+      ]
+    },
+    "esri-package": {
+      "href": "meta/best_model.dlpk",
+      "type": "application/zip",
+      "title": "Esri Deep Learning Package",
+      "description": "Esri DLPK format for ArcGIS integration",
+      "roles": [
+        "mlm:model"
+      ],
+      "mlm:artifact_type": "esri_dlpk"
+    },
+    "confusion-matrix": {
+      "href": "meta/confusion_matrix.png",
+      "type": "image/png",
+      "title": "Model Evaluation Confusion Matrix",
+      "description": "Model evaluation confusion matrix visualization",
+      "roles": [
+        "metadata",
+        "overview"
+      ]
+    },
+    "example-input": {
+      "href": "meta/example_input.png",
+      "type": "image/png",
+      "title": "Example Input Image",
+      "description": "Example satellite image input for the model",
+      "roles": [
+        "metadata",
+        "overview"
+      ]
+    },
+    "example-prediction": {
+      "href": "meta/example_pred.png",
+      "type": "image/png",
+      "title": "Example Model Prediction",
+      "description": "Example model prediction output showing detected refugee camps",
+      "roles": [
+        "metadata",
+        "overview"
+      ]
+    },
+    "example-target": {
+      "href": "meta/example_target.png",
+      "type": "image/png",
+      "title": "Example Ground Truth",
+      "description": "Example ground truth segmentation mask for comparison",
+      "roles": [
+        "metadata",
+        "overview"
+      ]
+    },
+    "model-metadata": {
+      "href": "meta/model.emd",
+      "type": "application/json",
+      "title": "Esri Model Definition",
+      "description": "Esri model definition file for ArcGIS Pro integration",
+      "roles": [
+        "metadata"
+      ]
+    }
+  }
+}
