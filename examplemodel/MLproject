@@ -1,6 +1,6 @@
 name: refugee-camp-detector
-docker_env:
-  image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
+# docker_env:
+#   image: ghcr.io/kshitijrajsharma/opengeoaimodelshub:master
 
 entry_points:
   preprocess:
